@@ -5,14 +5,17 @@
 
 import express from 'express';
 import healthRoutes from './healthRoutes.js';
+import repositoryRoutes from './repositoryRoutes.js';
 
 const router = express.Router();
 
 // Health check routes
 router.use('/health', healthRoutes);
 
+// Repository management routes
+router.use('/repositories', repositoryRoutes);
+
 // Future routes will be added here:
-// router.use('/repositories', repositoryRoutes);
 // router.use('/search', searchRoutes);
 // router.use('/auth', authRoutes);
 

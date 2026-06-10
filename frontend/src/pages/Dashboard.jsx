@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { getHealthStatus } from '../services/api';
 
 const Dashboard = () => {
@@ -76,12 +77,23 @@ const Dashboard = () => {
           )}
         </div>
 
-        {/* Placeholder Cards for Future Features */}
-        <div className="dashboard-card placeholder-card">
+        {/* Repository Management Card */}
+        <div className="dashboard-card">
           <h2 className="card-title">📦 My Repositories</h2>
-          <p className="placeholder-text">
-            Repository management will be implemented in the next phase
-          </p>
+          <div className="feature-info">
+            <p>
+              <strong>New Feature Available!</strong> You can now manage repositories.
+            </p>
+            <ul className="feature-list">
+              <li>✅ Add new repositories with GitHub URLs</li>
+              <li>✅ View all your imported repositories</li>
+              <li>✅ Edit and delete repositories</li>
+              <li>✅ Search through your repositories</li>
+            </ul>
+            <Link to="/repositories" className="feature-link">
+              Go to Repository Management →
+            </Link>
+          </div>
         </div>
 
         <div className="dashboard-card placeholder-card">

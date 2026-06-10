@@ -58,6 +58,14 @@ const Navbar = () => {
               Dashboard
             </Link>
           </li>
+          <li>
+            <Link 
+              to="/repositories" 
+              className={`nav-link ${isActive('/repositories') ? 'active' : ''}`}
+            >
+              Repositories
+            </Link>
+          </li>
         </ul>
 
         <div className="navbar-status">

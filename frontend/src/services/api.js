@@ -107,9 +107,104 @@ export const getDetailedHealth = async () => {
   }
 };
 
-// Future API functions will be added here:
-// export const getRepositories = async () => { ... }
-// export const importRepository = async (repoUrl) => { ... }
-// export const searchCode = async (query) => { ... }
+// ============================================
+// Repository API Functions
+// ============================================
+
+/**
+ * Get all repositories
+ * @returns {Promise<Array>} Array of repository objects
+ */
+export const getRepositories = async () => {
+  try {
+    const response = await apiClient.get('/repositories');
+    return response.data;
+  } catch (error) {
+    throw new Error('Failed to fetch repositories');
+  }
+};
+
+/**
+ * Get single repository by ID
+ * @param {number} id - Repository ID
+ * @returns {Promise<Object>} Repository object
+ */
+export const getRepositoryById = async (id) => {
+  try {
+    const response = await apiClient.get(`/repositories/${id}`);
+    return response.data;
+  } catch (error) {
+    throw new Error('Failed to fetch repository');
+  }
+};
+
+/**
+ * Create a new repository
+ * @param {Object} repositoryData - Repository data
+ * @param {string} repositoryData.repository_name - Repository name
+ * @param {string} repositoryData.github_url - GitHub URL
+ * @param {string} repositoryData.description - Repository description
+ * @returns {Promise<Object>} Created repository object
+ */
+export const createRepository = async (repositoryData) => {
+  try {
+    const response = await apiClient.post('/repositories', repositoryData);
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.data) {
+      throw new Error(error.response.data.message || 'Failed to create repository');
+    }
+    throw new Error('Failed to create repository');
+  }
+};
+
+/**
+ * Update a repository
+ * @param {number} id - Repository ID
+ * @param {Object} repositoryData - Updated repository data
+ * @returns {Promise<Object>} Updated repository object
+ */
+export const updateRepository = async (id, repositoryData) => {
+  try {
+    const response = await apiClient.put(`/repositories/${id}`, repositoryData);
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.data) {
+      throw new Error(error.response.data.message || 'Failed to update repository');
+    }
+    throw new Error('Failed to update repository');
+  }
+};
+
+/**
+ * Delete a repository
+ * @param {number} id - Repository ID
+ * @returns {Promise<Object>} Success message
+ */
+export const deleteRepository = async (id) => {
+  try {
+    const response = await apiClient.delete(`/repositories/${id}`);
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.data) {
+      throw new Error(error.response.data.message || 'Failed to delete repository');
+    }
+    throw new Error('Failed to delete repository');
+  }
+};
+
+/**
+ * Search repositories
+ * @param {string} query - Search query
+ * @returns {Promise<Array>} Array of matching repositories
+ */
+export const searchRepositories = async (query) => {
+  try {
+    const response = await apiClient.get(`/repositories/search?q=${encodeURIComponent(query)}`);
+    return response.data;
+  } catch (error) {
+    throw new Error('Failed to search repositories');
+  }
+};
 
 export default apiClient;
