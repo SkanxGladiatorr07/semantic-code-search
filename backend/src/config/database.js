@@ -102,6 +102,9 @@ const createTables = async (connection) => {
         description TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        scanned_at TIMESTAMP NULL,
+        scan_status ENUM('pending', 'scanning', 'completed', 'failed') DEFAULT 'pending',
+        total_files INT DEFAULT 0,
         
         INDEX idx_repository_name (repository_name),
         INDEX idx_created_at (created_at),
@@ -111,6 +114,26 @@ const createTables = async (connection) => {
     `);
     
     console.log('✅ repositories table created successfully');
+    
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS repository_files (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        repository_id INT NOT NULL,
+        file_name VARCHAR(255) NOT NULL,
+        file_path VARCHAR(1000) NOT NULL,
+        file_extension VARCHAR(50),
+        file_size BIGINT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        
+        FOREIGN KEY (repository_id) REFERENCES repositories(id) ON DELETE CASCADE,
+        INDEX idx_repository_id (repository_id),
+        INDEX idx_file_extension (file_extension),
+        INDEX idx_file_path (file_path(255)),
+        UNIQUE KEY unique_repo_file_path (repository_id, file_path(500))
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+    
+    console.log('✅ repository_files table created successfully');
     
     // Insert sample data if table is empty
     const [countRows] = await connection.query('SELECT COUNT(*) as count FROM repositories');

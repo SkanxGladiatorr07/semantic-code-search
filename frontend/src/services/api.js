@@ -207,4 +207,38 @@ export const searchRepositories = async (query) => {
   }
 };
 
+/**
+ * Scan repository
+ * @param {number} id - Repository ID
+ * @returns {Promise<Object>} Scan result
+ */
+export const scanRepository = async (id) => {
+  try {
+    const response = await apiClient.post(`/repositories/${id}/scan`);
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.data) {
+      throw new Error(error.response.data.message || 'Failed to scan repository');
+    }
+    throw new Error('Failed to scan repository');
+  }
+};
+
+/**
+ * Get repository files
+ * @param {number} id - Repository ID
+ * @returns {Promise<Object>} Repository files data
+ */
+export const getRepositoryFiles = async (id) => {
+  try {
+    const response = await apiClient.get(`/repositories/${id}/files`);
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.data) {
+      throw new Error(error.response.data.message || 'Failed to fetch repository files');
+    }
+    throw new Error('Failed to fetch repository files');
+  }
+};
+
 export default apiClient;

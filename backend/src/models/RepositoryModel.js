@@ -166,6 +166,28 @@ class RepositoryModel {
   }
 
   /**
+   * Update scan status
+   * @param {number} id - Repository ID
+   * @param {string} status - Scan status
+   * @param {number} totalFiles - Total files count
+   * @returns {Promise<Object|null>}
+   */
+  async updateScanStatus(id, status, totalFiles = 0) {
+    try {
+      const pool = getPool();
+      await pool.query(
+        'UPDATE repositories SET scan_status = ?, total_files = ?, scanned_at = NOW() WHERE id = ?',
+        [status, totalFiles, id]
+      );
+
+      return this.findById(id);
+    } catch (error) {
+      console.error(`Error updating scan status for repository ${id}:`, error);
+      throw new Error('Failed to update scan status');
+    }
+  }
+
+  /**
    * Count total repositories
    * @returns {Promise<number>} Total number of repositories
    */

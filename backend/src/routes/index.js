@@ -6,6 +6,7 @@
 import express from 'express';
 import healthRoutes from './healthRoutes.js';
 import repositoryRoutes from './repositoryRoutes.js';
+import scanRoutes from './scanRoutes.js';
 
 const router = express.Router();
 
@@ -14,6 +15,9 @@ router.use('/health', healthRoutes);
 
 // Repository management routes
 router.use('/repositories', repositoryRoutes);
+
+// Scan routes
+router.use('/repositories', scanRoutes);
 
 // Future routes will be added here:
 // router.use('/search', searchRoutes);
