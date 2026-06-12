@@ -6,6 +6,7 @@
 import express from 'express';
 import healthRoutes from './healthRoutes.js';
 import repositoryRoutes from './repositoryRoutes.js';
+import parserRoutes from './parserRoutes.js';
 
 const router = express.Router();
 
@@ -14,6 +15,9 @@ router.use('/health', healthRoutes);
 
 // Repository management routes
 router.use('/repositories', repositoryRoutes);
+
+// Parser routes
+router.use('/repositories', parserRoutes);
 
 // Future routes will be added here:
 // router.use('/search', searchRoutes);
