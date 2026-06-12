@@ -207,4 +207,39 @@ export const searchRepositories = async (query) => {
   }
 };
 
+/**
+ * Analyze repository
+ * @param {number} id - Repository ID
+ * @returns {Promise<Object>} Analysis result
+ */
+export const analyzeRepository = async (id) => {
+  try {
+    const response = await apiClient.post(`/repositories/${id}/analyze`);
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.data) {
+      throw new Error(error.response.data.message || 'Failed to analyze repository');
+    }
+    throw new Error('Failed to analyze repository');
+  }
+};
+
+/**
+ * Get repository symbols
+ * @param {number} id - Repository ID
+ * @param {Object} params - Query parameters (type, search)
+ * @returns {Promise<Object>} Repository symbols data
+ */
+export const getRepositorySymbols = async (id, params = {}) => {
+  try {
+    const response = await apiClient.get(`/repositories/${id}/symbols`, { params });
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.data) {
+      throw new Error(error.response.data.message || 'Failed to fetch symbols');
+    }
+    throw new Error('Failed to fetch symbols');
+  }
+};
+
 export default apiClient;
