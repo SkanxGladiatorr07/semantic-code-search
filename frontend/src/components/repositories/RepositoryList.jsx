@@ -7,6 +7,8 @@ import { useState, useEffect } from 'react';
 import { getRepositories, deleteRepository, searchRepositories } from '../../services/api';
 import RepositoryForm from './RepositoryForm';
 import ScanButton from './ScanButton';
+import AnalyzeButton from './AnalyzeButton';
+import { Link } from 'react-router-dom';
 
 const RepositoryList = () => {
   const [repositories, setRepositories] = useState([]);
@@ -299,6 +301,16 @@ const RepositoryList = () => {
                         repository={repo} 
                         onScanComplete={fetchRepositories}
                       />
+                      <AnalyzeButton 
+                        repository={repo} 
+                        onAnalyzeComplete={fetchRepositories}
+                      />
+                      <Link
+                        to={`/repositories/${repo.id}/symbols`}
+                        className="btn btn-secondary btn-sm"
+                      >
+                        📊 View Symbols
+                      </Link>
                       <button
                         onClick={() => handleEdit(repo)}
                         className="btn btn-secondary btn-sm"
