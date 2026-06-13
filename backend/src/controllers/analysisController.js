@@ -147,7 +147,65 @@ export const getRepositorySymbols = async (req, res) => {
   }
 };
 
+/**
+ * Search repository symbols
+ * @route GET /api/repositories/:id/search
+ * @access Public
+ */
+export const searchRepositorySymbols = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { query, type } = req.query;
+
+    if (!query || query.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Search query is required'
+      });
+    }
+
+    const repository = await RepositoryModel.findById(parseInt(id));
+    
+    if (!repository) {
+      return res.status(404).json({
+        success: false,
+        message: 'Repository not found'
+      });
+    }
+
+    const symbols = await SymbolModel.searchWithFilter(parseInt(id), query.trim(), type || null);
+
+    const statistics = {
+      total: symbols.length,
+      functions: symbols.filter(s => s.symbol_type === 'function').length,
+      classes: symbols.filter(s => s.symbol_type === 'class').length,
+      interfaces: symbols.filter(s => s.symbol_type === 'interface').length
+    };
+
+    res.status(200).json({
+      success: true,
+      data: {
+        repository_id: repository.id,
+        repository_name: repository.repository_name,
+        query: query.trim(),
+        type_filter: type || null,
+        symbols,
+        statistics
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in searchRepositorySymbols:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to search symbols',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 export default {
   analyzeRepository,
-  getRepositorySymbols
+  getRepositorySymbols,
+  searchRepositorySymbols
 };

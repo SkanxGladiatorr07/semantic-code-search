@@ -6,7 +6,8 @@
 import express from 'express';
 import {
   analyzeRepository,
-  getRepositorySymbols
+  getRepositorySymbols,
+  searchRepositorySymbols
 } from '../controllers/analysisController.js';
 import { validateRepositoryId } from '../middleware/validators.js';
 
@@ -17,5 +18,8 @@ router.post('/:id/analyze', validateRepositoryId, analyzeRepository);
 
 // GET /api/repositories/:id/symbols - Get repository symbols
 router.get('/:id/symbols', validateRepositoryId, getRepositorySymbols);
+
+// GET /api/repositories/:id/search - Search repository symbols
+router.get('/:id/search', validateRepositoryId, searchRepositorySymbols);
 
 export default router;

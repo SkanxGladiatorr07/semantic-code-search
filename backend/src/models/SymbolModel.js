@@ -182,6 +182,41 @@ class SymbolModel {
       throw new Error('Failed to search symbols');
     }
   }
+
+  /**
+   * Search symbols by name and optionally filter by type
+   * @param {number} repositoryId - Repository ID
+   * @param {string} query - Search query
+   * @param {string|null} symbolType - Optional symbol type filter
+   * @returns {Promise<Array>}
+   */
+  async searchWithFilter(repositoryId, query, symbolType = null) {
+    try {
+      const pool = getPool();
+      const searchTerm = `%${query}%`;
+      
+      let sql = `SELECT s.id, s.repository_id, s.file_id, s.symbol_name, s.symbol_type, s.created_at,
+                        f.file_name, f.file_path, f.file_extension
+                 FROM symbols s
+                 JOIN repository_files f ON s.file_id = f.id
+                 WHERE s.repository_id = ? AND s.symbol_name LIKE ?`;
+      
+      const params = [repositoryId, searchTerm];
+      
+      if (symbolType) {
+        sql += ` AND s.symbol_type = ?`;
+        params.push(symbolType);
+      }
+      
+      sql += ` ORDER BY s.symbol_name`;
+      
+      const [rows] = await pool.query(sql, params);
+      return rows;
+    } catch (error) {
+      console.error('Error searching symbols with filter:', error);
+      throw new Error('Failed to search symbols');
+    }
+  }
 }
 
 export default new SymbolModel();
