@@ -276,4 +276,25 @@ export const getRepositorySymbols = async (id, params = {}) => {
   }
 };
 
+/**
+ * Search repository symbols
+ * @param {number} id - Repository ID
+ * @param {string} query - Search query
+ * @param {string} type - Optional symbol type filter
+ * @returns {Promise<Object>} Search results
+ */
+export const searchRepositorySymbols = async (id, query, type = null) => {
+  try {
+    const params = { query };
+    if (type) params.type = type;
+    const response = await apiClient.get(`/repositories/${id}/search`, { params });
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.data) {
+      throw new Error(error.response.data.message || 'Failed to search symbols');
+    }
+    throw new Error('Failed to search symbols');
+  }
+};
+
 export default apiClient;

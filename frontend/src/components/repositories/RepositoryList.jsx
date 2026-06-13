@@ -306,6 +306,12 @@ const RepositoryList = () => {
                         onAnalyzeComplete={fetchRepositories}
                       />
                       <Link
+                        to={`/repositories/${repo.id}/search`}
+                        className="btn btn-primary btn-sm"
+                      >
+                        🔍 Search
+                      </Link>
+                      <Link
                         to={`/repositories/${repo.id}/symbols`}
                         className="btn btn-secondary btn-sm"
                       >
