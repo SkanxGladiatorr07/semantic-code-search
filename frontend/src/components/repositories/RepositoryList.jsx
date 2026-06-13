@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { getRepositories, deleteRepository, searchRepositories } from '../../services/api';
 import RepositoryForm from './RepositoryForm';
+import ScanButton from './ScanButton';
 
 const RepositoryList = () => {
   const [repositories, setRepositories] = useState([]);
@@ -280,10 +281,24 @@ const RepositoryList = () => {
                         <span className="meta-item">
                           Updated: {formatDate(repo.updated_at)}
                         </span>
+                        {repo.scan_status === 'completed' && (
+                          <span className="meta-item">
+                            <Link 
+                              to={`/repositories/${repo.id}/files`}
+                              className="view-files-link"
+                            >
+                              📁 View Files ({repo.total_files})
+                            </Link>
+                          </span>
+                        )}
                       </div>
                     </div>
                     
                     <div className="card-actions">
+                      <ScanButton 
+                        repository={repo} 
+                        onScanComplete={fetchRepositories}
+                      />
                       <button
                         onClick={() => handleEdit(repo)}
                         className="btn btn-secondary btn-sm"
@@ -515,10 +530,22 @@ const RepositoryList = () => {
           gap: var(--spacing-lg);
           font-size: 0.875rem;
           color: var(--text-light);
+          flex-wrap: wrap;
+        }
+        
+        .view-files-link {
+          color: var(--primary-color);
+          font-weight: 600;
+          text-decoration: none;
+        }
+        
+        .view-files-link:hover {
+          text-decoration: underline;
         }
         
         .card-actions {
           display: flex;
+          flex-direction: column;
           gap: var(--spacing-sm);
         }
         
