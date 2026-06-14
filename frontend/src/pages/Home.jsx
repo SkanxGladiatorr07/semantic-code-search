@@ -11,7 +11,7 @@ const Home = () => {
       <section className="hero-section">
         <div className="hero-content">
           <h1 className="hero-title">
-            Semantic Code Search & Repository Assistant
+            <b>Semantic Code Search & Repository Assistant</b>
           </h1>
           <p className="hero-subtitle">
             Import GitHub repositories and search, analyze, and understand codebases with AI-powered insights
