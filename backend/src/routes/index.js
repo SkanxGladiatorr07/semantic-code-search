@@ -9,6 +9,7 @@ import repositoryRoutes from './repositoryRoutes.js';
 import scanRoutes from './scanRoutes.js';
 import parserRoutes from './parserRoutes.js';
 import analysisRoutes from './analysisRoutes.js';
+import aiRoutes from './aiRoutes.js';
 
 const router = express.Router();
 
@@ -26,6 +27,9 @@ router.use('/repositories', parserRoutes);
 
 // Analysis routes
 router.use('/repositories', analysisRoutes);
+
+// AI routes
+router.use('/ai', aiRoutes);
 
 // Future routes will be added here:
 // router.use('/search', searchRoutes);
