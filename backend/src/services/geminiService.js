@@ -295,6 +295,51 @@ Return a JSON array of indices (numbers) ordered by relevance, most relevant fir
   }
 
   /**
+   * Answer question about repository
+   * @param {string} question - User question
+   * @param {Object} context - Repository context (symbols, files)
+   * @returns {Promise<string>} Answer
+   */
+  async answerRepositoryQuestion(question, context) {
+    try {
+      this.ensureInitialized();
+
+      const { repository, symbols, files } = context;
+
+      const symbolsSummary = symbols.slice(0, 50).map(s => 
+        `- ${s.symbol_type} ${s.symbol_name} in ${s.file_name}`
+      ).join('\n');
+
+      const filesSummary = files.slice(0, 30).map(f => 
+        `- ${f.file_name} (${f.file_extension})`
+      ).join('\n');
+
+      const prompt = `You are a code assistant helping users understand a repository.
+
+Repository: ${repository.repository_name}
+Description: ${repository.description || 'No description'}
+GitHub: ${repository.github_url}
+
+Available Symbols (functions, classes, interfaces):
+${symbolsSummary}
+${symbols.length > 50 ? `... and ${symbols.length - 50} more` : ''}
+
+Files in Repository:
+${filesSummary}
+${files.length > 30 ? `... and ${files.length - 30} more files` : ''}
+
+User Question: ${question}
+
+Provide a detailed, accurate answer based on the repository structure and available symbols. If you don't have enough information to answer fully, say so and suggest what additional information might help.`;
+
+      return await this.generateText(prompt);
+    } catch (error) {
+      console.error('Error answering repository question:', error);
+      throw new Error('Failed to answer repository question with Gemini');
+    }
+  }
+
+  /**
    * Check if service is available
    * @returns {boolean}
    */

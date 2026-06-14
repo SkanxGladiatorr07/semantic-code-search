@@ -9,6 +9,7 @@ import SymbolModel from '../models/SymbolModel.js';
 import gitCloner from '../utils/gitCloner.js';
 import codeParser from '../utils/codeParser.js';
 import symbolExtractor from '../utils/symbolExtractor.js';
+import geminiService from '../services/geminiService.js';
 
 /**
  * Analyze repository and extract symbols
@@ -204,8 +205,81 @@ export const searchRepositorySymbols = async (req, res) => {
   }
 };
 
+/**
+ * Repository chat endpoint
+ * @route POST /api/repositories/:id/chat
+ * @access Public
+ */
+export const chatWithRepository = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { question } = req.body;
+
+    if (!question || question.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Question is required'
+      });
+    }
+
+    const repository = await RepositoryModel.findById(parseInt(id));
+    
+    if (!repository) {
+      return res.status(404).json({
+        success: false,
+        message: 'Repository not found'
+      });
+    }
+
+    const symbols = await SymbolModel.findByRepositoryId(parseInt(id));
+    const files = await RepositoryFileModel.findByRepositoryId(parseInt(id));
+
+    if (symbols.length === 0 && files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Repository must be scanned and analyzed before chat'
+      });
+    }
+
+    const context = {
+      repository: {
+        repository_name: repository.repository_name,
+        description: repository.description,
+        github_url: repository.github_url
+      },
+      symbols,
+      files
+    };
+
+    const answer = await geminiService.answerRepositoryQuestion(question, context);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        repository_id: repository.id,
+        repository_name: repository.repository_name,
+        question,
+        answer,
+        context_size: {
+          symbols: symbols.length,
+          files: files.length
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in chatWithRepository:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to answer question',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 export default {
   analyzeRepository,
   getRepositorySymbols,
-  searchRepositorySymbols
+  searchRepositorySymbols,
+  chatWithRepository
 };
