@@ -297,4 +297,22 @@ export const searchRepositorySymbols = async (id, query, type = null) => {
   }
 };
 
+/**
+ * Chat with repository
+ * @param {number} id - Repository ID
+ * @param {string} question - User question
+ * @returns {Promise<Object>} AI response
+ */
+export const chatWithRepository = async (id, question) => {
+  try {
+    const response = await apiClient.post(`/repositories/${id}/chat`, { question });
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.data) {
+      throw new Error(error.response.data.message || 'Failed to get response');
+    }
+    throw new Error('Failed to get response');
+  }
+};
+
 export default apiClient;
