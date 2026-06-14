@@ -14,7 +14,7 @@ const Layout = ({ children }) => {
         {children}
       </main>
       <footer className="app-footer">
-        <p>&copy; 2024 Semantic Code Search. Built with MERN Stack.</p>
+        <p>&copy; 2026 Semantic Code Search.</p>
       </footer>
     </div>
   );

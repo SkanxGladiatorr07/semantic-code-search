@@ -11,6 +11,7 @@ import Repositories from './pages/Repositories';
 import RepositoryFiles from './pages/RepositoryFiles';
 import RepositorySymbols from './pages/RepositorySymbols';
 import RepositorySearch from './pages/RepositorySearch';
+import RepositoryChat from './pages/RepositoryChat';
 import './styles/App.css';
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
           <Route path="/repositories/:id/files" element={<RepositoryFiles />} />
           <Route path="/repositories/:id/symbols" element={<RepositorySymbols />} />
           <Route path="/repositories/:id/search" element={<RepositorySearch />} />
+          <Route path="/repositories/:id/chat" element={<RepositoryChat />} />
         </Routes>
       </Layout>
     </Router>

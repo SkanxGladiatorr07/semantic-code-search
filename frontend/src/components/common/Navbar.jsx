@@ -37,8 +37,7 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-brand">
-          <span className="brand-icon">🔍</span>
-          <span className="brand-text">Code Search</span>
+          <span className="brand-text"> Semantic Code Search</span>
         </Link>
 
         <ul className="navbar-menu">

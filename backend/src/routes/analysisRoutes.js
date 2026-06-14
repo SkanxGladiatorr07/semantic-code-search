@@ -7,7 +7,8 @@ import express from 'express';
 import {
   analyzeRepository,
   getRepositorySymbols,
-  searchRepositorySymbols
+  searchRepositorySymbols,
+  chatWithRepository
 } from '../controllers/analysisController.js';
 import { validateRepositoryId } from '../middleware/validators.js';
 
@@ -21,5 +22,8 @@ router.get('/:id/symbols', validateRepositoryId, getRepositorySymbols);
 
 // GET /api/repositories/:id/search - Search repository symbols
 router.get('/:id/search', validateRepositoryId, searchRepositorySymbols);
+
+// POST /api/repositories/:id/chat - Chat with repository
+router.post('/:id/chat', validateRepositoryId, chatWithRepository);
 
 export default router;
