@@ -10,6 +10,7 @@ import gitCloner from '../utils/gitCloner.js';
 import codeParser from '../utils/codeParser.js';
 import symbolExtractor from '../utils/symbolExtractor.js';
 import geminiService from '../services/geminiService.js';
+import contextService from '../services/contextService.js';
 
 /**
  * Analyze repository and extract symbols
@@ -231,25 +232,14 @@ export const chatWithRepository = async (req, res) => {
       });
     }
 
-    const symbols = await SymbolModel.findByRepositoryId(parseInt(id));
-    const files = await RepositoryFileModel.findByRepositoryId(parseInt(id));
+    const context = await contextService.getRelevantContext(parseInt(id), question);
 
-    if (symbols.length === 0 && files.length === 0) {
+    if (context.totalSymbols === 0 && context.totalFiles === 0) {
       return res.status(400).json({
         success: false,
         message: 'Repository must be scanned and analyzed before chat'
       });
     }
-
-    const context = {
-      repository: {
-        repository_name: repository.repository_name,
-        description: repository.description,
-        github_url: repository.github_url
-      },
-      symbols,
-      files
-    };
 
     const answer = await geminiService.answerRepositoryQuestion(question, context);
 
@@ -261,9 +251,16 @@ export const chatWithRepository = async (req, res) => {
         question,
         answer,
         context_size: {
-          symbols: symbols.length,
-          files: files.length
-        }
+          symbols: context.relevantSymbols.length,
+          files: context.relevantFiles.length,
+          total_symbols: context.totalSymbols,
+          total_files: context.totalFiles
+        },
+        relevant_files: context.relevantFiles.map(f => ({
+          file_name: f.file_name,
+          file_path: f.file_path,
+          relevance_score: f.relevance_score
+        }))
       }
     });
 
