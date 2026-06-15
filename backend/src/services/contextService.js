@@ -26,10 +26,17 @@ class ContextService {
 
       const relevantFiles = this.findRelevantFiles(question, symbols, files);
       
+      const topFiles = relevantFiles.slice(0, 3);
+      
       const fileContents = await this.readFileContents(
         repository.id,
-        relevantFiles.slice(0, 5)
+        topFiles
       );
+
+      const relevantSymbols = topFiles
+        .map(f => f.symbols)
+        .flat()
+        .slice(0, 50);
 
       return {
         repository: {
@@ -37,7 +44,7 @@ class ContextService {
           description: repository.description,
           github_url: repository.github_url
         },
-        relevantSymbols: relevantFiles.map(f => f.symbols).flat(),
+        relevantSymbols,
         relevantFiles: fileContents,
         totalSymbols: symbols.length,
         totalFiles: files.length
@@ -136,15 +143,25 @@ class ContextService {
   async readFileContents(repositoryId, relevantFiles) {
     const repositoryPath = gitCloner.getRepositoryPath(repositoryId);
     const fileContents = [];
+    const MAX_FILE_SIZE = 2000;
+    const MAX_TOTAL_CONTEXT = 8000;
+    let totalChars = 0;
 
     for (const fileData of relevantFiles) {
+      if (totalChars >= MAX_TOTAL_CONTEXT) break;
+
       try {
         const fullPath = path.join(repositoryPath, fileData.file_path);
         const content = await fs.readFile(fullPath, 'utf-8');
         
-        const truncatedContent = content.length > 3000 
-          ? content.substring(0, 3000) + '\n... (truncated)'
+        const remainingSpace = MAX_TOTAL_CONTEXT - totalChars;
+        const allowedSize = Math.min(MAX_FILE_SIZE, remainingSpace);
+        
+        const truncatedContent = content.length > allowedSize
+          ? content.substring(0, allowedSize) + '\n... (truncated)'
           : content;
+
+        totalChars += truncatedContent.length;
 
         fileContents.push({
           file_name: fileData.file_name,
@@ -152,7 +169,9 @@ class ContextService {
           file_extension: fileData.file_extension,
           content: truncatedContent,
           symbols: fileData.symbols,
-          relevance_score: fileData.score
+          relevance_score: fileData.score,
+          line_count: content.split('\n').length,
+          char_count: content.length
         });
       } catch (error) {
         console.warn(`Failed to read file ${fileData.file_path}:`, error.message);

@@ -306,56 +306,137 @@ Return a JSON array of indices (numbers) ordered by relevance, most relevant fir
 
       const { repository, relevantSymbols, relevantFiles, totalSymbols, totalFiles } = context;
 
-      const symbolsSummary = relevantSymbols.slice(0, 30).map(s => 
-        `- ${s.symbol_type} ${s.symbol_name} in ${s.file_name}`
-      ).join('\n');
+      let prompt = `You are an expert code assistant analyzing a repository.
 
-      const fileContents = relevantFiles.map(f => {
-        const symbolsList = f.symbols && f.symbols.length > 0 
-          ? f.symbols.map(s => `  - ${s.symbol_type} ${s.symbol_name}`).join('\n')
-          : '';
-        
-        return `
-=== File: ${f.file_path} ===
-${symbolsList ? `Symbols:\n${symbolsList}\n` : ''}
-Code:
-\`\`\`
-${f.content}
-\`\`\`
-`;
-      }).join('\n\n');
-
-      const prompt = `You are a code assistant helping users understand a repository.
-
-Repository: ${repository.repository_name}
-Description: ${repository.description || 'No description'}
+REPOSITORY INFORMATION:
+Name: ${repository.repository_name}
+Description: ${repository.description || 'No description provided'}
 GitHub: ${repository.github_url}
+Total Files: ${totalFiles}
+Total Symbols: ${totalSymbols}
 
-Repository Statistics:
-- Total Files: ${totalFiles}
-- Total Symbols: ${totalSymbols}
+`;
 
-Relevant Symbols Found:
-${symbolsSummary}
-${relevantSymbols.length > 30 ? `... and ${relevantSymbols.length - 30} more symbols` : ''}
+      if (relevantSymbols.length > 0) {
+        const symbolsByType = {
+          function: relevantSymbols.filter(s => s.symbol_type === 'function'),
+          class: relevantSymbols.filter(s => s.symbol_type === 'class'),
+          interface: relevantSymbols.filter(s => s.symbol_type === 'interface')
+        };
 
-Relevant Source Code:
-${fileContents}
+        prompt += `RELEVANT SYMBOLS FOUND:\n`;
+        
+        if (symbolsByType.function.length > 0) {
+          prompt += `\nFunctions (${symbolsByType.function.length}):\n`;
+          symbolsByType.function.slice(0, 20).forEach(s => {
+            prompt += `  • ${s.symbol_name} in ${s.file_name}\n`;
+          });
+          if (symbolsByType.function.length > 20) {
+            prompt += `  ... and ${symbolsByType.function.length - 20} more functions\n`;
+          }
+        }
 
-User Question: ${question}
+        if (symbolsByType.class.length > 0) {
+          prompt += `\nClasses (${symbolsByType.class.length}):\n`;
+          symbolsByType.class.slice(0, 15).forEach(s => {
+            prompt += `  • ${s.symbol_name} in ${s.file_name}\n`;
+          });
+          if (symbolsByType.class.length > 15) {
+            prompt += `  ... and ${symbolsByType.class.length - 15} more classes\n`;
+          }
+        }
 
-Instructions:
-- Provide a detailed, accurate answer based on the actual code shown above
-- Reference specific functions, classes, or code snippets when relevant
-- If the code doesn't contain enough information, clearly state what's missing
-- Be precise and technical when discussing the code
-- Use code examples from the files above to illustrate your points`;
+        if (symbolsByType.interface.length > 0) {
+          prompt += `\nInterfaces (${symbolsByType.interface.length}):\n`;
+          symbolsByType.interface.slice(0, 15).forEach(s => {
+            prompt += `  • ${s.symbol_name} in ${s.file_name}\n`;
+          });
+          if (symbolsByType.interface.length > 15) {
+            prompt += `  ... and ${symbolsByType.interface.length - 15} more interfaces\n`;
+          }
+        }
+      }
+
+      if (relevantFiles.length > 0) {
+        prompt += `\n${'='.repeat(80)}\nRELEVANT SOURCE CODE FILES:\n${'='.repeat(80)}\n`;
+        
+        relevantFiles.forEach((file, index) => {
+          prompt += `\n[FILE ${index + 1}] ${file.file_path}\n`;
+          prompt += `Language: ${file.file_extension || 'unknown'}\n`;
+          prompt += `Lines: ${file.line_count || 'unknown'} | Characters: ${file.char_count || 'unknown'}\n`;
+          prompt += `Relevance Score: ${file.relevance_score || 0}\n`;
+          
+          if (file.symbols && file.symbols.length > 0) {
+            const fileSymbolsByType = {
+              function: file.symbols.filter(s => s.symbol_type === 'function'),
+              class: file.symbols.filter(s => s.symbol_type === 'class'),
+              interface: file.symbols.filter(s => s.symbol_type === 'interface')
+            };
+            
+            prompt += `Symbols in this file:\n`;
+            if (fileSymbolsByType.function.length > 0) {
+              prompt += `  Functions: ${fileSymbolsByType.function.map(s => s.symbol_name).join(', ')}\n`;
+            }
+            if (fileSymbolsByType.class.length > 0) {
+              prompt += `  Classes: ${fileSymbolsByType.class.map(s => s.symbol_name).join(', ')}\n`;
+            }
+            if (fileSymbolsByType.interface.length > 0) {
+              prompt += `  Interfaces: ${fileSymbolsByType.interface.map(s => s.symbol_name).join(', ')}\n`;
+            }
+          }
+          
+          prompt += `\nCode:\n\`\`\`${this.getLanguageForExtension(file.file_extension)}\n${file.content}\n\`\`\`\n`;
+          prompt += `${'-'.repeat(80)}\n`;
+        });
+      } else {
+        prompt += `\nNo directly relevant code files found for this question.\n`;
+      }
+
+      prompt += `\n${'='.repeat(80)}\nUSER QUESTION:\n${question}\n${'='.repeat(80)}\n`;
+
+      prompt += `\nINSTRUCTIONS:
+1. Analyze the provided code files and symbols carefully
+2. Answer the question directly and concisely
+3. Reference specific files, functions, or classes when relevant
+4. Use actual code snippets from above to support your answer
+5. If the code doesn't fully answer the question, state what information is missing
+6. Be technical and precise - assume the user is a developer
+7. Format code references with backticks
+8. If multiple files are relevant, explain how they relate to each other
+
+ANSWER:`;
 
       return await this.generateText(prompt);
     } catch (error) {
       console.error('Error answering repository question:', error);
       throw new Error('Failed to answer repository question with Gemini');
     }
+  }
+
+  /**
+   * Get language identifier for file extension
+   * @param {string} extension - File extension
+   * @returns {string} Language identifier
+   */
+  getLanguageForExtension(extension) {
+    const map = {
+      '.js': 'javascript',
+      '.jsx': 'jsx',
+      '.ts': 'typescript',
+      '.tsx': 'tsx',
+      '.py': 'python',
+      '.java': 'java',
+      '.cpp': 'cpp',
+      '.c': 'c',
+      '.go': 'go',
+      '.rs': 'rust',
+      '.php': 'php',
+      '.rb': 'ruby',
+      '.swift': 'swift',
+      '.kt': 'kotlin',
+      '.cs': 'csharp'
+    };
+    return map[extension] || '';
   }
 
   /**
