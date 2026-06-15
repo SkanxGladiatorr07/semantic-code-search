@@ -274,9 +274,70 @@ export const chatWithRepository = async (req, res) => {
   }
 };
 
+/**
+ * Generate repository summary
+ * @route POST /api/repositories/:id/summary
+ * @access Public
+ */
+export const generateRepositorySummary = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const repository = await RepositoryModel.findById(parseInt(id));
+    
+    if (!repository) {
+      return res.status(404).json({
+        success: false,
+        message: 'Repository not found'
+      });
+    }
+
+    const symbols = await SymbolModel.findByRepositoryId(parseInt(id));
+    const files = await RepositoryFileModel.findByRepositoryId(parseInt(id));
+
+    if (symbols.length === 0 && files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Repository must be scanned and analyzed before generating summary'
+      });
+    }
+
+    const context = await contextService.getRelevantContext(
+      parseInt(id), 
+      'Generate a comprehensive project summary'
+    );
+
+    const summary = await geminiService.generateRepositorySummary(context);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        repository_id: repository.id,
+        repository_name: repository.repository_name,
+        github_url: repository.github_url,
+        summary,
+        statistics: {
+          total_files: context.totalFiles,
+          total_symbols: context.totalSymbols,
+          analyzed_files: context.relevantFiles.length
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in generateRepositorySummary:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to generate summary',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 export default {
   analyzeRepository,
   getRepositorySymbols,
   searchRepositorySymbols,
-  chatWithRepository
+  chatWithRepository,
+  generateRepositorySummary
 };

@@ -414,6 +414,122 @@ ANSWER:`;
   }
 
   /**
+   * Generate repository summary
+   * @param {Object} context - Repository context
+   * @returns {Promise<Object>} Summary object
+   */
+  async generateRepositorySummary(context) {
+    try {
+      this.ensureInitialized();
+
+      const { repository, relevantSymbols, relevantFiles, totalSymbols, totalFiles } = context;
+
+      const extensions = new Set();
+      relevantFiles.forEach(f => {
+        if (f.file_extension) extensions.add(f.file_extension);
+      });
+
+      const symbolsByType = {
+        functions: relevantSymbols.filter(s => s.symbol_type === 'function'),
+        classes: relevantSymbols.filter(s => s.symbol_type === 'class'),
+        interfaces: relevantSymbols.filter(s => s.symbol_type === 'interface')
+      };
+
+      const filesList = relevantFiles.map(f => 
+        `- ${f.file_path} (${f.line_count || 0} lines)`
+      ).join('\n');
+
+      const majorClasses = symbolsByType.classes.slice(0, 10).map(s => 
+        `- ${s.symbol_name} in ${s.file_name}`
+      ).join('\n');
+
+      const majorFunctions = symbolsByType.functions.slice(0, 15).map(s => 
+        `- ${s.symbol_name} in ${s.file_name}`
+      ).join('\n');
+
+      const codeSnippets = relevantFiles.slice(0, 2).map(f => {
+        return `File: ${f.file_path}\n\`\`\`\n${f.content.substring(0, 800)}\n\`\`\``;
+      }).join('\n\n');
+
+      const prompt = `Analyze this code repository and generate a comprehensive summary in JSON format.
+
+Repository: ${repository.repository_name}
+Description: ${repository.description || 'No description'}
+GitHub: ${repository.github_url}
+
+Statistics:
+- Total Files: ${totalFiles}
+- Total Symbols: ${totalSymbols}
+- File Extensions: ${Array.from(extensions).join(', ')}
+
+Key Files:
+${filesList}
+
+Major Classes:
+${majorClasses || 'None detected'}
+
+Major Functions:
+${majorFunctions || 'None detected'}
+
+Sample Code:
+${codeSnippets}
+
+Generate a JSON response with this exact structure:
+{
+  "overview": "A 2-3 sentence high-level description of what this project does",
+  "purpose": "The main purpose and goals of this project",
+  "technologies": ["tech1", "tech2", "tech3"],
+  "languages": ["language1", "language2"],
+  "architecture": "Brief description of the project architecture",
+  "major_classes": [
+    {"name": "ClassName", "file": "file.js", "purpose": "What it does"}
+  ],
+  "major_functions": [
+    {"name": "functionName", "file": "file.js", "purpose": "What it does"}
+  ],
+  "key_features": ["feature1", "feature2", "feature3"],
+  "complexity": "low|medium|high"
+}
+
+Respond ONLY with valid JSON, no additional text.`;
+
+      const text = await this.generateText(prompt);
+      
+      try {
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          return JSON.parse(jsonMatch[0]);
+        }
+      } catch (parseError) {
+        console.warn('Failed to parse JSON response, returning structured text');
+      }
+
+      return {
+        overview: text.substring(0, 300),
+        purpose: 'Unable to determine',
+        technologies: Array.from(extensions),
+        languages: [],
+        architecture: 'Unable to determine',
+        major_classes: symbolsByType.classes.slice(0, 5).map(s => ({
+          name: s.symbol_name,
+          file: s.file_name,
+          purpose: 'Unknown'
+        })),
+        major_functions: symbolsByType.functions.slice(0, 5).map(s => ({
+          name: s.symbol_name,
+          file: s.file_name,
+          purpose: 'Unknown'
+        })),
+        key_features: [],
+        complexity: 'medium'
+      };
+    } catch (error) {
+      console.error('Error generating repository summary:', error);
+      throw new Error('Failed to generate repository summary');
+    }
+  }
+
+  /**
    * Get language identifier for file extension
    * @param {string} extension - File extension
    * @returns {string} Language identifier
