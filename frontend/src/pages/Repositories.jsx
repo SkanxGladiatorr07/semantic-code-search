@@ -9,7 +9,7 @@ const Repositories = () => {
   return (
     <div className="repositories-page">
       <div className="page-header">
-        <h1>Repository Management</h1>
+        <h1><b>Repository Management</b></h1>
         <p className="page-subtitle">
           Import, manage, and organize your GitHub repositories for code search and analysis
         </p>

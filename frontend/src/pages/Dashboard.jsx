@@ -50,7 +50,7 @@ const Dashboard = () => {
             <div className="error-message">
               <p>❌ {error}</p>
               <p className="error-hint">
-                Run <code>npm run dev</code> in the backend directory
+                backend is not functional
               </p>
             </div>
           ) : (
@@ -79,7 +79,7 @@ const Dashboard = () => {
 
         {/* Repository Management Card */}
         <div className="dashboard-card">
-          <h2 className="card-title">📦 My Repositories</h2>
+          <h2 className="card-title">My Repositories</h2>
           <div className="feature-info">
             <p>
               <strong>New Feature Available!</strong> You can now manage repositories.
@@ -97,16 +97,16 @@ const Dashboard = () => {
         </div>
 
         <div className="dashboard-card placeholder-card">
-          <h2 className="card-title">🔍 Recent Searches</h2>
+          <h2 className="card-title">Recent Searches</h2>
           <p className="placeholder-text">
             Search history will be displayed here
           </p>
         </div>
 
         <div className="dashboard-card placeholder-card">
-          <h2 className="card-title">📊 Analytics</h2>
+          <h2 className="card-title">Analytics</h2>
           <p className="placeholder-text">
-            Code analysis and statistics coming soon
+            to be added
           </p>
         </div>
       </div>

@@ -11,10 +11,10 @@ const Home = () => {
       <section className="hero-section">
         <div className="hero-content">
           <h1 className="hero-title">
-            <b>Semantic Code Search & Repository Assistant</b>
+            <b>Welcome to Semantic Code Search</b>
           </h1>
           <p className="hero-subtitle">
-            Import GitHub repositories and search, analyze, and understand codebases with AI-powered insights
+            Import GitHub repositories to search, analyze, and understand codebases with AI-powered insights
           </p>
           <Link to="/dashboard" className="cta-button">
             Get Started
