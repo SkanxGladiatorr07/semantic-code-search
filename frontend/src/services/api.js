@@ -332,4 +332,21 @@ export const getRepositoryInsights = async (id) => {
   }
 };
 
+/**
+ * Generate repository summary
+ * @param {number} id - Repository ID
+ * @returns {Promise<Object>} Generated summary
+ */
+export const generateRepositorySummary = async (id) => {
+  try {
+    const response = await apiClient.post(`/repositories/${id}/summary`);
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.data) {
+      throw new Error(error.response.data.message || 'Failed to generate summary');
+    }
+    throw new Error('Failed to generate summary');
+  }
+};
+
 export default apiClient;
