@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getRepositoryById, searchRepositorySymbols } from '../services/api';
 
@@ -7,12 +7,15 @@ const RepositorySearch = () => {
   const [repository, setRepository] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [symbolType, setSymbolType] = useState('');
+  const [fileExtension, setFileExtension] = useState('');
   const [results, setResults] = useState([]);
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [expandedFiles, setExpandedFiles] = useState({});
+  const [sortBy, setSortBy] = useState('relevance');
+  const searchInputRef = useRef(null);
 
   useEffect(() => {
     fetchRepository();
@@ -42,11 +45,26 @@ const RepositorySearch = () => {
 
     try {
       const response = await searchRepositorySymbols(id, searchQuery.trim(), symbolType || null);
-      setResults(response.data.symbols || []);
-      setStatistics(response.data.statistics || null);
+      let filteredResults = response.data.symbols || [];
+      
+      if (fileExtension) {
+        filteredResults = filteredResults.filter(s => s.file_extension === fileExtension);
+      }
+      
+      if (sortBy === 'name') {
+        filteredResults.sort((a, b) => a.symbol_name.localeCompare(b.symbol_name));
+      } else if (sortBy === 'file') {
+        filteredResults.sort((a, b) => a.file_path.localeCompare(b.file_path));
+      }
+      
+      setResults(filteredResults);
+      setStatistics({
+        ...response.data.statistics,
+        total: filteredResults.length
+      });
       
       const initialExpanded = {};
-      groupByFile(response.data.symbols || []).forEach((_, idx) => {
+      groupByFile(filteredResults).forEach((_, idx) => {
         initialExpanded[idx] = true;
       });
       setExpandedFiles(initialExpanded);
@@ -63,11 +81,14 @@ const RepositorySearch = () => {
   const handleClear = () => {
     setSearchQuery('');
     setSymbolType('');
+    setFileExtension('');
+    setSortBy('relevance');
     setResults([]);
     setStatistics(null);
     setHasSearched(false);
     setError(null);
     setExpandedFiles({});
+    searchInputRef.current?.focus();
   };
 
   const toggleFileExpanded = (idx) => {
@@ -75,6 +96,15 @@ const RepositorySearch = () => {
       ...prev,
       [idx]: !prev[idx]
     }));
+  };
+
+  const toggleAllFiles = () => {
+    const allExpanded = Object.values(expandedFiles).every(v => v);
+    const newState = {};
+    groupByFile(results).forEach((_, idx) => {
+      newState[idx] = !allExpanded;
+    });
+    setExpandedFiles(newState);
   };
 
   const groupByFile = (symbols) => {
@@ -92,6 +122,14 @@ const RepositorySearch = () => {
       grouped[key].symbols.push(symbol);
     });
     return Object.values(grouped);
+  };
+
+  const getUniqueExtensions = () => {
+    const extensions = new Set();
+    results.forEach(r => {
+      if (r.file_extension) extensions.add(r.file_extension);
+    });
+    return Array.from(extensions).sort();
   };
 
   const highlightMatch = (text, query) => {
@@ -141,7 +179,7 @@ const RepositorySearch = () => {
           <span className="breadcrumb-separator">/</span>
           {repository && (
             <>
-              <Link to={`/repositories/${id}/symbols`} className="breadcrumb-link">
+              <Link to={`/repositories/${id}/insights`} className="breadcrumb-link">
                 {repository.repository_name}
               </Link>
               <span className="breadcrumb-separator">/</span>
@@ -161,6 +199,7 @@ const RepositorySearch = () => {
       <form onSubmit={handleSearch} className="search-form">
         <div className="search-input-container">
           <input
+            ref={searchInputRef}
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -207,28 +246,71 @@ const RepositorySearch = () => {
 
       {error && (
         <div className="error-message">
-          <p>❌ {error}</p>
+          <span>❌ {error}</span>
+          <button onClick={() => setError(null)} className="error-close">×</button>
         </div>
       )}
 
       {statistics && (
-        <div className="search-stats">
-          <div className="stat-card">
-            <span className="stat-value">{statistics.total}</span>
-            <span className="stat-label">Total Results</span>
+        <div className="results-toolbar">
+          <div className="search-stats">
+            <div className="stat-item">
+              <span className="stat-value">{statistics.total}</span>
+              <span className="stat-label">Results</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{statistics.functions}</span>
+              <span className="stat-label">Functions</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{statistics.classes}</span>
+              <span className="stat-label">Classes</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-value">{statistics.interfaces}</span>
+              <span className="stat-label">Interfaces</span>
+            </div>
           </div>
-          <div className="stat-card">
-            <span className="stat-value">{statistics.functions}</span>
-            <span className="stat-label">Functions</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-value">{statistics.classes}</span>
-            <span className="stat-label">Classes</span>
-          </div>
-          <div className="stat-card">
-            <span className="stat-value">{statistics.interfaces}</span>
-            <span className="stat-label">Interfaces</span>
-          </div>
+
+          {results.length > 0 && (
+            <div className="toolbar-actions">
+              <select
+                value={sortBy}
+                onChange={(e) => {
+                  setSortBy(e.target.value);
+                  handleSearch({ preventDefault: () => {} });
+                }}
+                className="sort-select"
+              >
+                <option value="relevance">Sort by Relevance</option>
+                <option value="name">Sort by Name</option>
+                <option value="file">Sort by File</option>
+              </select>
+
+              {getUniqueExtensions().length > 1 && (
+                <select
+                  value={fileExtension}
+                  onChange={(e) => {
+                    setFileExtension(e.target.value);
+                    handleSearch({ preventDefault: () => {} });
+                  }}
+                  className="ext-filter"
+                >
+                  <option value="">All Extensions</option>
+                  {getUniqueExtensions().map(ext => (
+                    <option key={ext} value={ext}>{ext}</option>
+                  ))}
+                </select>
+              )}
+
+              <button
+                onClick={toggleAllFiles}
+                className="btn btn-secondary btn-sm"
+              >
+                {Object.values(expandedFiles).every(v => v) ? 'Collapse All' : 'Expand All'}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -247,19 +329,25 @@ const RepositorySearch = () => {
           <p className="empty-query">
             No symbols matching <strong>"{searchQuery}"</strong>
             {symbolType && <span> with type <strong>"{symbolType}"</strong></span>}
+            {fileExtension && <span> in <strong>{fileExtension}</strong> files</span>}
           </p>
           <div className="empty-suggestions">
             <p className="suggestion-title">Try these suggestions:</p>
             <ul>
               <li>Check your spelling</li>
               <li>Try more general keywords</li>
-              <li>Remove the type filter</li>
+              <li>Remove filters</li>
               <li>Search for partial names</li>
             </ul>
           </div>
-          <button onClick={handleClear} className="btn btn-primary">
-            Start New Search
-          </button>
+          <div className="empty-actions">
+            <button onClick={handleClear} className="btn btn-primary">
+              Start New Search
+            </button>
+            <Link to={`/repositories/${id}/symbols`} className="btn btn-secondary">
+              View All Symbols
+            </Link>
+          </div>
         </div>
       )}
 
@@ -274,7 +362,16 @@ const RepositorySearch = () => {
               <li>Search is case-insensitive</li>
               <li>Use partial names for broader results</li>
               <li>Filter by type for specific results</li>
+              <li>Sort and filter results after searching</li>
             </ul>
+          </div>
+          <div className="quick-links">
+            <Link to={`/repositories/${id}/chat`} className="quick-link">
+              💬 Ask AI About Code
+            </Link>
+            <Link to={`/repositories/${id}/symbols`} className="quick-link">
+              📊 Browse All Symbols
+            </Link>
           </div>
         </div>
       )}
@@ -305,9 +402,18 @@ const RepositorySearch = () => {
                   <h3 className="file-name">{fileGroup.file_name}</h3>
                   <p className="file-path">{fileGroup.file_path}</p>
                 </div>
-                <span className="symbol-count">
-                  {fileGroup.symbols.length} {fileGroup.symbols.length === 1 ? 'symbol' : 'symbols'}
-                </span>
+                <div className="file-actions">
+                  <span className="symbol-count">
+                    {fileGroup.symbols.length} {fileGroup.symbols.length === 1 ? 'symbol' : 'symbols'}
+                  </span>
+                  <Link
+                    to={`/repositories/${id}/files`}
+                    className="view-file-link"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    View File →
+                  </Link>
+                </div>
               </div>
 
               {expandedFiles[idx] && (
@@ -326,12 +432,14 @@ const RepositorySearch = () => {
                           {symbol.symbol_type}
                         </span>
                       </div>
-                      <Link
-                        to={`/repositories/${id}/symbols?highlight=${symbol.id}`}
-                        className="view-details-link"
-                      >
-                        View Details →
-                      </Link>
+                      <div className="symbol-actions">
+                        <Link
+                          to={`/repositories/${id}/symbols?highlight=${symbol.id}`}
+                          className="view-details-link"
+                        >
+                          Details →
+                        </Link>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -436,42 +544,76 @@ const RepositorySearch = () => {
           gap: var(--spacing-sm);
         }
 
-        .search-stats {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-          gap: var(--spacing-md);
-          margin-bottom: var(--spacing-xl);
-        }
-
-        .stat-card {
+        .results-toolbar {
           background: var(--bg-primary);
           border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
+          border-radius: var(--radius-lg);
           padding: var(--spacing-lg);
-          text-align: center;
-          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          margin-bottom: var(--spacing-lg);
+        }
+
+        .search-stats {
+          display: flex;
+          gap: var(--spacing-xl);
+          margin-bottom: var(--spacing-md);
+          flex-wrap: wrap;
+        }
+
+        .stat-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
         }
 
         .stat-value {
-          display: block;
-          font-size: 2rem;
+          font-size: 1.5rem;
           font-weight: bold;
           color: var(--primary-color);
-          margin-bottom: var(--spacing-xs);
         }
 
         .stat-label {
-          display: block;
-          font-size: 0.875rem;
+          font-size: 0.75rem;
           color: var(--text-secondary);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+
+        .toolbar-actions {
+          display: flex;
+          gap: var(--spacing-sm);
+          flex-wrap: wrap;
+        }
+
+        .sort-select,
+        .ext-filter {
+          padding: var(--spacing-xs) var(--spacing-sm);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-sm);
+          font-size: 0.875rem;
+          background: white;
+          cursor: pointer;
         }
 
         .error-message {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
           background: #fee2e2;
           color: var(--error-color);
           padding: var(--spacing-md);
           border-radius: var(--radius-md);
           margin-bottom: var(--spacing-lg);
+        }
+
+        .error-close {
+          background: none;
+          border: none;
+          font-size: 1.25rem;
+          cursor: pointer;
+          color: var(--error-color);
+          padding: 0;
+          width: 24px;
+          height: 24px;
         }
 
         .loading-state {
@@ -572,6 +714,30 @@ const RepositorySearch = () => {
           text-align: left;
         }
 
+        .empty-actions,
+        .quick-links {
+          display: flex;
+          gap: var(--spacing-md);
+          justify-content: center;
+          margin-top: var(--spacing-lg);
+          flex-wrap: wrap;
+        }
+
+        .quick-link {
+          padding: var(--spacing-sm) var(--spacing-lg);
+          border: 1px solid var(--border-color);
+          border-radius: var(--radius-md);
+          text-decoration: none;
+          color: var(--text-primary);
+          transition: all var(--transition-fast);
+        }
+
+        .quick-link:hover {
+          background: var(--primary-color);
+          color: white;
+          border-color: var(--primary-color);
+        }
+
         .results-header {
           margin-bottom: var(--spacing-lg);
           padding-bottom: var(--spacing-md);
@@ -654,6 +820,12 @@ const RepositorySearch = () => {
           margin: 0;
         }
 
+        .file-actions {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-md);
+        }
+
         .symbol-count {
           font-size: 0.875rem;
           color: var(--text-secondary);
@@ -661,6 +833,17 @@ const RepositorySearch = () => {
           background: white;
           padding: var(--spacing-xs) var(--spacing-sm);
           border-radius: var(--radius-sm);
+        }
+
+        .view-file-link {
+          color: var(--primary-color);
+          text-decoration: none;
+          font-size: 0.875rem;
+          font-weight: 500;
+        }
+
+        .view-file-link:hover {
+          text-decoration: underline;
         }
 
         .symbols-list {
@@ -719,18 +902,21 @@ const RepositorySearch = () => {
           text-transform: uppercase;
         }
 
+        .symbol-actions {
+          opacity: 0;
+          transition: opacity var(--transition-fast);
+        }
+
+        .symbol-item:hover .symbol-actions {
+          opacity: 1;
+        }
+
         .view-details-link {
           color: var(--primary-color);
           text-decoration: none;
           font-size: 0.875rem;
           font-weight: 500;
           white-space: nowrap;
-          opacity: 0;
-          transition: opacity var(--transition-fast);
-        }
-
-        .symbol-item:hover .view-details-link {
-          opacity: 1;
         }
 
         .view-details-link:hover {
@@ -752,24 +938,33 @@ const RepositorySearch = () => {
           }
 
           .search-stats {
-            grid-template-columns: repeat(2, 1fr);
+            justify-content: space-around;
+          }
+
+          .toolbar-actions {
+            flex-direction: column;
           }
 
           .file-header {
             flex-wrap: wrap;
           }
 
-          .symbol-count {
+          .file-actions {
             width: 100%;
-            text-align: center;
+            justify-content: space-between;
+            margin-top: var(--spacing-sm);
           }
 
-          .symbol-item {
-            flex-wrap: wrap;
-          }
-
-          .view-details-link {
+          .symbol-actions {
             opacity: 1;
+          }
+
+          .empty-actions,
+          .quick-links {
+            flex-direction: column;
+          }
+
+          .quick-link {
             width: 100%;
             text-align: center;
           }
