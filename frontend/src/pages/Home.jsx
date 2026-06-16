@@ -50,24 +50,6 @@ const Home = () => {
           </div>
         </div>
       </section>
-
-      <section className="tech-stack-section">
-        <h2 className="section-title">Built With</h2>
-        <div className="tech-stack-grid">
-          <div className="tech-item">
-            <span className="tech-badge">React</span>
-          </div>
-          <div className="tech-item">
-            <span className="tech-badge">Node.js</span>
-          </div>
-          <div className="tech-item">
-            <span className="tech-badge">Express</span>
-          </div>
-          <div className="tech-item">
-            <span className="tech-badge">MySQL</span>
-          </div>
-        </div>
-      </section>
     </div>
   );
 };
