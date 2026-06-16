@@ -315,4 +315,21 @@ export const chatWithRepository = async (id, question) => {
   }
 };
 
+/**
+ * Get repository insights
+ * @param {number} id - Repository ID
+ * @returns {Promise<Object>} Repository insights
+ */
+export const getRepositoryInsights = async (id) => {
+  try {
+    const response = await apiClient.get(`/repositories/${id}/insights`);
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.data) {
+      throw new Error(error.response.data.message || 'Failed to fetch insights');
+    }
+    throw new Error('Failed to fetch insights');
+  }
+};
+
 export default apiClient;

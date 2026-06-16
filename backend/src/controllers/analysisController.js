@@ -334,10 +334,68 @@ export const generateRepositorySummary = async (req, res) => {
   }
 };
 
+/**
+ * Get repository insights
+ * @route GET /api/repositories/:id/insights
+ * @access Public
+ */
+export const getRepositoryInsights = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const repository = await RepositoryModel.findById(parseInt(id));
+    
+    if (!repository) {
+      return res.status(404).json({
+        success: false,
+        message: 'Repository not found'
+      });
+    }
+
+    const statistics = await SymbolModel.getStatistics(parseInt(id));
+    const totalFiles = await RepositoryFileModel.countByRepositoryId(parseInt(id));
+    
+    const fileExtensions = await RepositoryFileModel.getFileExtensionStats(parseInt(id));
+
+    res.status(200).json({
+      success: true,
+      data: {
+        repository: {
+          id: repository.id,
+          repository_name: repository.repository_name,
+          description: repository.description,
+          github_url: repository.github_url,
+          scan_status: repository.scan_status,
+          created_at: repository.created_at,
+          updated_at: repository.updated_at
+        },
+        statistics: {
+          total_files: totalFiles,
+          total_symbols: statistics.total,
+          total_functions: statistics.functions,
+          total_classes: statistics.classes,
+          total_interfaces: statistics.interfaces
+        },
+        file_types: fileExtensions,
+        last_scan_date: repository.updated_at
+      }
+    });
+
+  } catch (error) {
+    console.error('Error in getRepositoryInsights:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to fetch insights',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 export default {
   analyzeRepository,
   getRepositorySymbols,
   searchRepositorySymbols,
   chatWithRepository,
-  generateRepositorySummary
+  generateRepositorySummary,
+  getRepositoryInsights
 };

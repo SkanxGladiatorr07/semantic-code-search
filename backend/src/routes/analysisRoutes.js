@@ -9,7 +9,8 @@ import {
   getRepositorySymbols,
   searchRepositorySymbols,
   chatWithRepository,
-  generateRepositorySummary
+  generateRepositorySummary,
+  getRepositoryInsights
 } from '../controllers/analysisController.js';
 import { validateRepositoryId } from '../middleware/validators.js';
 
@@ -29,5 +30,8 @@ router.post('/:id/chat', validateRepositoryId, chatWithRepository);
 
 // POST /api/repositories/:id/summary - Generate repository summary
 router.post('/:id/summary', validateRepositoryId, generateRepositorySummary);
+
+// GET /api/repositories/:id/insights - Get repository insights
+router.get('/:id/insights', validateRepositoryId, getRepositoryInsights);
 
 export default router;

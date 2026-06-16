@@ -116,6 +116,50 @@ class RepositoryFileModel {
       throw new Error('Failed to get file statistics');
     }
   }
+
+  /**
+   * Get file extension statistics
+   * @param {number} repositoryId - Repository ID
+   * @returns {Promise<Array>}
+   */
+  async getFileExtensionStats(repositoryId) {
+    try {
+      const pool = getPool();
+      const [rows] = await pool.query(
+        `SELECT 
+          file_extension,
+          COUNT(*) as count
+        FROM repository_files 
+        WHERE repository_id = ?
+        GROUP BY file_extension
+        ORDER BY count DESC`,
+        [repositoryId]
+      );
+      return rows;
+    } catch (error) {
+      console.error('Error getting file extension stats:', error);
+      throw new Error('Failed to get file extension statistics');
+    }
+  }
+
+  /**
+   * Find file by ID
+   * @param {number} id - File ID
+   * @returns {Promise<Object>}
+   */
+  async findById(id) {
+    try {
+      const pool = getPool();
+      const [rows] = await pool.query(
+        'SELECT * FROM repository_files WHERE id = ?',
+        [id]
+      );
+      return rows[0] || null;
+    } catch (error) {
+      console.error('Error finding file by ID:', error);
+      throw new Error('Failed to fetch file');
+    }
+  }
 }
 
 export default new RepositoryFileModel();
