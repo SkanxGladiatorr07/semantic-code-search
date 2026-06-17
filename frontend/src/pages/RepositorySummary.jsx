@@ -10,13 +10,6 @@ const RepositorySummary = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-const RepositorySummary = () => {
-  const { id } = useParams();
-  const [repository, setRepository] = useState(null);
-  const [summary, setSummary] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
   useEffect(() => {
     fetchRepository();
   }, [id]);

@@ -78,107 +78,109 @@ const RepositoryInsights = () => {
           <div className="insights-grid">
             <div className="insight-card primary-card">
               <div className="card-icon">📦</div>
-          <div className="card-content">
-            <h3>Repository</h3>
-            <p className="card-title">{repository.repository_name}</p>
-            {repository.description && (
-              <p className="card-description">{repository.description}</p>
-            )}
-            <a
-              href={repository.github_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="github-link"
-            >
-              🐙 View on GitHub →
-            </a>
-          </div>
-        </div>
-
-        <div className="insight-card">
-          <div className="card-icon">📄</div>
-          <div className="card-content">
-            <h3>Total Files</h3>
-            <p className="card-value">{statistics.total_files.toLocaleString()}</p>
-            <p className="card-label">Scanned files</p>
-          </div>
-        </div>
-
-        <div className="insight-card">
-          <div className="card-icon">🔢</div>
-          <div className="card-content">
-            <h3>Total Symbols</h3>
-            <p className="card-value">{statistics.total_symbols.toLocaleString()}</p>
-            <p className="card-label">Functions, classes & interfaces</p>
-          </div>
-        </div>
-
-        <div className="insight-card">
-          <div className="card-icon">⚡</div>
-          <div className="card-content">
-            <h3>Functions</h3>
-            <p className="card-value">{statistics.total_functions.toLocaleString()}</p>
-            <p className="card-label">Total functions detected</p>
-          </div>
-        </div>
-
-        <div className="insight-card">
-          <div className="card-icon">📦</div>
-          <div className="card-content">
-            <h3>Classes</h3>
-            <p className="card-value">{statistics.total_classes.toLocaleString()}</p>
-            <p className="card-label">Total classes detected</p>
-          </div>
-        </div>
-
-        <div className="insight-card">
-          <div className="card-icon">🔷</div>
-          <div className="card-content">
-            <h3>Interfaces</h3>
-            <p className="card-value">{statistics.total_interfaces.toLocaleString()}</p>
-            <p className="card-label">Total interfaces detected</p>
-          </div>
-        </div>
-
-        <div className="insight-card scan-card">
-          <div className="card-icon">🕐</div>
-          <div className="card-content">
-            <h3>Last Scan</h3>
-            <p className="card-date">{formatDate(last_scan_date)}</p>
-            <p className="card-label">
-              Status: <span className={`status-badge ${repository.scan_status}`}>
-                {repository.scan_status}
-              </span>
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {file_types && file_types.length > 0 && (
-        <div className="file-types-section">
-          <h3>📁 File Types Distribution</h3>
-          <div className="file-types-grid">
-            {file_types.map((type, index) => (
-              <div key={index} className="file-type-item">
-                <span className="file-extension">{type.file_extension || 'No extension'}</span>
-                <span className="file-count">{type.count} files</span>
+              <div className="card-content">
+                <h3>Repository</h3>
+                <p className="card-title">{insights.repository.repository_name}</p>
+                {insights.repository.description && (
+                  <p className="card-description">{insights.repository.description}</p>
+                )}
+                <a
+                  href={insights.repository.github_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="github-link"
+                >
+                  🐙 View on GitHub →
+                </a>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
+            </div>
 
-      <div className="insights-actions">
-        <Link to={`/repositories/${id}/chat`} className="btn btn-primary">
-          💬 Chat with Repository
-        </Link>
-        <Link to={`/repositories/${id}/search`} className="btn btn-secondary">
-          🔍 Search Symbols
-        </Link>
-        <Link to={`/repositories/${id}/symbols`} className="btn btn-secondary">
-          📊 View All Symbols
-        </Link>
-      </div>
+            <div className="insight-card">
+              <div className="card-icon">📄</div>
+              <div className="card-content">
+                <h3>Total Files</h3>
+                <p className="card-value">{insights.statistics.total_files.toLocaleString()}</p>
+                <p className="card-label">Scanned files</p>
+              </div>
+            </div>
+
+            <div className="insight-card">
+              <div className="card-icon">🔢</div>
+              <div className="card-content">
+                <h3>Total Symbols</h3>
+                <p className="card-value">{insights.statistics.total_symbols.toLocaleString()}</p>
+                <p className="card-label">Functions, classes & interfaces</p>
+              </div>
+            </div>
+
+            <div className="insight-card">
+              <div className="card-icon">⚡</div>
+              <div className="card-content">
+                <h3>Functions</h3>
+                <p className="card-value">{insights.statistics.total_functions.toLocaleString()}</p>
+                <p className="card-label">Total functions detected</p>
+              </div>
+            </div>
+
+            <div className="insight-card">
+              <div className="card-icon">📦</div>
+              <div className="card-content">
+                <h3>Classes</h3>
+                <p className="card-value">{insights.statistics.total_classes.toLocaleString()}</p>
+                <p className="card-label">Total classes detected</p>
+              </div>
+            </div>
+
+            <div className="insight-card">
+              <div className="card-icon">🔷</div>
+              <div className="card-content">
+                <h3>Interfaces</h3>
+                <p className="card-value">{insights.statistics.total_interfaces.toLocaleString()}</p>
+                <p className="card-label">Total interfaces detected</p>
+              </div>
+            </div>
+
+            <div className="insight-card scan-card">
+              <div className="card-icon">🕐</div>
+              <div className="card-content">
+                <h3>Last Scan</h3>
+                <p className="card-date">{formatDate(insights.last_scan_date)}</p>
+                <p className="card-label">
+                  Status: <span className={`status-badge ${insights.repository.scan_status}`}>
+                    {insights.repository.scan_status}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {insights.file_types && insights.file_types.length > 0 && (
+            <div className="file-types-section">
+              <h3>📁 File Types Distribution</h3>
+              <div className="file-types-grid">
+                {insights.file_types.map((type, index) => (
+                  <div key={index} className="file-type-item">
+                    <span className="file-extension">{type.file_extension || 'No extension'}</span>
+                    <span className="file-count">{type.count} files</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="insights-actions">
+            <Link to={`/repositories/${id}/chat`} className="btn btn-primary">
+              💬 Chat with Repository
+            </Link>
+            <Link to={`/repositories/${id}/search`} className="btn btn-secondary">
+              🔍 Search Symbols
+            </Link>
+            <Link to={`/repositories/${id}/symbols`} className="btn btn-secondary">
+              📊 View All Symbols
+            </Link>
+          </div>
+        </>
+      )}
 
       <style jsx>{`
         .insights-container {
