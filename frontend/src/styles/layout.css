@@ -1,3 +1,14 @@
+:root {
+  --container-max-width: 1400px;
+  --page-padding: 48px;
+  --page-padding-mobile: 20px;
+  --section-spacing: 48px;
+  --card-padding: 28px;
+  --card-radius: 12px;
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --card-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
 .app-layout {
   min-height: 100vh;
   display: flex;
@@ -10,8 +21,118 @@
   padding-top: 70px;
 }
 
+.page-container {
+  max-width: var(--container-max-width);
+  margin: 0 auto;
+  padding: var(--page-padding);
+  min-height: calc(100vh - 80px);
+}
+
+.page-header {
+  margin-bottom: var(--section-spacing);
+}
+
+.page-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 16px 0;
+}
+
+.page-subtitle {
+  font-size: 1.0625rem;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.7;
+}
+
+.card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: var(--card-radius);
+  padding: var(--card-padding);
+  box-shadow: var(--card-shadow);
+  transition: all 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: var(--card-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  gap: 20px;
+}
+
+.card-title {
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.card-body {
+  color: #374151;
+  line-height: 1.7;
+}
+
+.card-footer {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.grid {
+  display: grid;
+  gap: 32px;
+}
+
+.grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+.grid-4 {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: var(--page-padding-mobile);
+  }
+  
+  .main-content {
+    padding-top: 60px;
+  }
+  
+  .page-title {
+    font-size: 1.75rem;
+  }
+  
+  .card {
+    padding: 20px;
+  }
+  
+  .grid-2,
+  .grid-3,
+  .grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 480px) {
   .main-content {
     padding-top: 60px;
+  }
+  
+  .page-title {
+    font-size: 1.5rem;
   }
 }

@@ -2,18 +2,53 @@
   animation: fadeIn 0.5s ease-in;
 }
 
+.dashboard-page .page-header {
+  margin-bottom: 48px;
+}
+
+.dashboard-page .page-title {
+  font-size: 2.5rem;
+  margin-bottom: 16px;
+  color: #111827;
+}
+
+.dashboard-page .page-subtitle {
+  font-size: 1.125rem;
+  color: #6b7280;
+}
+
+.dashboard-page .grid {
+  gap: 32px;
+}
+
+.dashboard-page .card {
+  padding: 32px;
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-page .card-title {
+  font-size: 1.5rem;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e5e7eb;
+  color: #111827;
+}
+
 .status-info {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 20px;
+  flex: 1;
 }
 
 .status-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #e5e7eb;
+  padding: 16px 0;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .status-row:last-child {
@@ -21,35 +56,64 @@
 }
 
 .status-label {
-  font-weight: 500;
+  font-weight: 600;
   color: #6b7280;
+  font-size: 1rem;
 }
 
 .status-value {
   color: #374151;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 1rem;
 }
 
 .status-success {
   color: #10b981;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 1.125rem;
 }
 
 .card-description {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   color: #6b7280;
-  line-height: 1.6;
+  line-height: 1.8;
+  font-size: 1rem;
+  flex: 1;
+}
+
+.dashboard-page .btn-group-vertical {
+  gap: 12px;
+  margin-top: auto;
+}
+
+.dashboard-page .btn-group-vertical .btn {
+  padding: 14px 20px;
+  font-size: 1rem;
+  justify-content: flex-start;
 }
 
 .getting-started-list {
-  padding-left: 20px;
-  margin: 16px 0;
+  padding-left: 28px;
+  margin: 24px 0 0 0;
   color: #374151;
-  line-height: 1.8;
+  line-height: 2;
+  flex: 1;
 }
 
 .getting-started-list li {
+  margin-bottom: 16px;
+  font-size: 1rem;
+}
+
+.dashboard-page .loading-state,
+.dashboard-page .error-state {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.dashboard-page .error-state p {
   margin-bottom: 12px;
+  line-height: 1.6;
 }
 
 @keyframes fadeIn {
@@ -60,5 +124,25 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-page .page-title {
+    font-size: 2rem;
+  }
+  
+  .dashboard-page .card {
+    padding: 24px;
+    min-height: auto;
+  }
+  
+  .dashboard-page .card-title {
+    font-size: 1.25rem;
+    margin-bottom: 20px;
+  }
+  
+  .status-row {
+    padding: 12px 0;
   }
 }
