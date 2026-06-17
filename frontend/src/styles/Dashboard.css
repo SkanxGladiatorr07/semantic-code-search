@@ -1,0 +1,64 @@
+.dashboard-page {
+  animation: fadeIn 0.5s ease-in;
+}
+
+.status-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.status-row:last-child {
+  border-bottom: none;
+}
+
+.status-label {
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.status-value {
+  color: #374151;
+  font-weight: 500;
+}
+
+.status-success {
+  color: #10b981;
+  font-weight: 600;
+}
+
+.card-description {
+  margin-bottom: 20px;
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+.getting-started-list {
+  padding-left: 20px;
+  margin: 16px 0;
+  color: #374151;
+  line-height: 1.8;
+}
+
+.getting-started-list li {
+  margin-bottom: 12px;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
