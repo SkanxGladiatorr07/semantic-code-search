@@ -16,10 +16,16 @@ const RepositorySummary = () => {
   const fetchRepository = async () => {
     try {
       const response = await getRepositoryById(id);
+      
+      if (!response?.data) {
+        setError('Repository data not available');
+        return;
+      }
+
       setRepository(response.data);
     } catch (err) {
       console.error('Error fetching repository:', err);
-      setError('Failed to load repository information');
+      setError(err.userMessage || 'Failed to load repository information');
     }
   };
 
@@ -29,10 +35,15 @@ const RepositorySummary = () => {
 
     try {
       const response = await generateRepositorySummary(id);
+      
+      if (!response?.data) {
+        throw new Error('No summary data received');
+      }
+
       setSummary(response.data);
     } catch (err) {
       console.error('Error generating summary:', err);
-      setError(err.message || 'Failed to generate summary');
+      setError(err.userMessage || err.message || 'Failed to generate summary');
     } finally {
       setLoading(false);
     }

@@ -22,6 +22,12 @@ const RepositoryChat = () => {
   const fetchRepository = async () => {
     try {
       const response = await getRepositoryById(id);
+      
+      if (!response?.data) {
+        setError('Repository data not available');
+        return;
+      }
+
       setRepository(response.data);
       
       setMessages([{
@@ -32,7 +38,7 @@ const RepositoryChat = () => {
       }]);
     } catch (err) {
       console.error('Error fetching repository:', err);
-      setError('Failed to load repository information');
+      setError(err.userMessage || 'Failed to load repository information');
     }
   };
 
@@ -62,6 +68,10 @@ const RepositoryChat = () => {
     try {
       const response = await chatWithRepository(id, question);
       
+      if (!response?.data?.answer) {
+        throw new Error('No response received from AI');
+      }
+
       const assistantMessage = {
         id: Date.now() + 1,
         type: 'assistant',
@@ -71,14 +81,16 @@ const RepositoryChat = () => {
       };
 
       setMessages(prev => [...prev, assistantMessage]);
+      setError(null);
     } catch (err) {
       console.error('Error sending message:', err);
-      setError(err.message || 'Failed to get response');
+      const errorText = err.userMessage || err.message || 'Failed to get response';
+      setError(errorText);
       
       const errorMessage = {
         id: Date.now() + 1,
         type: 'error',
-        content: err.message || 'Failed to get response. Please try again.',
+        content: errorText,
         timestamp: new Date()
       };
 

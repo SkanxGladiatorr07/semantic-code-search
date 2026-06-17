@@ -30,10 +30,11 @@ const RepositoryList = () => {
     setError(null);
     try {
       const response = await getRepositories();
-      setRepositories(response.data || []);
+      setRepositories(response?.data || []);
     } catch (err) {
       console.error('Error fetching repositories:', err);
-      setError('Failed to load repositories. Please check your connection.');
+      setError(err.userMessage || 'Failed to load repositories. Please check your connection.');
+      setRepositories([]);
     } finally {
       setLoading(false);
     }
@@ -50,11 +51,11 @@ const RepositoryList = () => {
     setError(null);
     try {
       const response = await searchRepositories(searchQuery.trim());
-      setRepositories(response.data || []);
+      setRepositories(response?.data || []);
     } catch (err) {
       console.error('Error searching repositories:', err);
-      setError('Failed to search repositories.');
-      fetchRepositories(); // Fallback to all repositories
+      setError(err.userMessage || 'Failed to search repositories.');
+      setRepositories([]);
     } finally {
       setLoading(false);
     }
@@ -66,17 +67,16 @@ const RepositoryList = () => {
       return;
     }
 
+    setDeleteConfirmId(id);
+
     try {
       await deleteRepository(id);
-      
-      // Update local state
       setRepositories(prev => prev.filter(repo => repo.id !== id));
-      
-      // Reset delete confirmation
       setDeleteConfirmId(null);
     } catch (err) {
       console.error('Error deleting repository:', err);
-      setError('Failed to delete repository.');
+      setError(err.userMessage || 'Failed to delete repository.');
+      setDeleteConfirmId(null);
     }
   };
 

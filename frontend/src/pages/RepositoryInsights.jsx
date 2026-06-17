@@ -18,10 +18,15 @@ const RepositoryInsights = () => {
 
     try {
       const response = await getRepositoryInsights(id);
+      
+      if (!response?.data) {
+        throw new Error('No insights data received');
+      }
+
       setInsights(response.data);
     } catch (err) {
       console.error('Error fetching insights:', err);
-      setError(err.message || 'Failed to load insights');
+      setError(err.userMessage || err.message || 'Failed to load insights');
     } finally {
       setLoading(false);
     }

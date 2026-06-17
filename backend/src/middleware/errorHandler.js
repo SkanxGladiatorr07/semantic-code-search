@@ -13,7 +13,6 @@
  * @param {NextFunction} next - Express next function
  */
 export const errorHandler = (err, req, res, next) => {
-  // Log error for debugging
   console.error('Error occurred:', {
     message: err.message,
     stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
@@ -21,20 +20,27 @@ export const errorHandler = (err, req, res, next) => {
     method: req.method
   });
 
-  // Determine status code
   const statusCode = err.statusCode || 500;
 
-  // Build error response
+  const userFriendlyMessages = {
+    400: 'Invalid request. Please check your input.',
+    404: 'Resource not found.',
+    500: 'An unexpected error occurred. Please try again later.',
+    503: 'Service temporarily unavailable. Please try again later.'
+  };
+
+  const userMessage = userFriendlyMessages[statusCode] || err.message || 'An error occurred';
+
   const errorResponse = {
     success: false,
     message: err.message || 'Internal Server Error',
+    userMessage: userMessage,
     ...(process.env.NODE_ENV === 'development' && {
       stack: err.stack,
       error: err
     })
   };
 
-  // Send error response
   res.status(statusCode).json(errorResponse);
 };
 

@@ -20,33 +20,45 @@ import contextService from '../services/contextService.js';
 export const analyzeRepository = async (req, res) => {
   try {
     const { id } = req.params;
+    const repositoryId = parseInt(id);
 
-    const repository = await RepositoryModel.findById(parseInt(id));
+    if (!repositoryId || isNaN(repositoryId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid repository ID',
+        userMessage: 'Please provide a valid repository ID'
+      });
+    }
+
+    const repository = await RepositoryModel.findById(repositoryId);
     
     if (!repository) {
       return res.status(404).json({
         success: false,
-        message: 'Repository not found'
+        message: 'Repository not found',
+        userMessage: 'The requested repository does not exist'
       });
     }
 
     if (repository.scan_status !== 'completed') {
       return res.status(400).json({
         success: false,
-        message: 'Repository must be scanned before analysis'
+        message: 'Repository must be scanned before analysis',
+        userMessage: 'Please scan the repository first before analyzing'
       });
     }
 
-    const files = await RepositoryFileModel.findByRepositoryId(parseInt(id));
+    const files = await RepositoryFileModel.findByRepositoryId(repositoryId);
     
     if (files.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'No files found in repository'
+        message: 'No files found in repository',
+        userMessage: 'No files found. Please scan the repository first'
       });
     }
 
-    await SymbolModel.deleteByRepositoryId(parseInt(id));
+    await SymbolModel.deleteByRepositoryId(repositoryId);
 
     const repositoryPath = gitCloner.getRepositoryPath(repository.id);
     const parsedFiles = await codeParser.parseFiles(files, repositoryPath);
@@ -66,10 +78,10 @@ export const analyzeRepository = async (req, res) => {
     });
 
     if (symbolsToSave.length > 0) {
-      await SymbolModel.createBatch(parseInt(id), symbolsToSave);
+      await SymbolModel.createBatch(repositoryId, symbolsToSave);
     }
 
-    const statistics = await SymbolModel.getStatistics(parseInt(id));
+    const statistics = await SymbolModel.getStatistics(repositoryId);
 
     res.status(200).json({
       success: true,
@@ -86,6 +98,7 @@ export const analyzeRepository = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to analyze repository',
+      userMessage: 'Unable to analyze repository. Please try again later',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
@@ -100,27 +113,37 @@ export const getRepositorySymbols = async (req, res) => {
   try {
     const { id } = req.params;
     const { type, search } = req.query;
+    const repositoryId = parseInt(id);
 
-    const repository = await RepositoryModel.findById(parseInt(id));
+    if (!repositoryId || isNaN(repositoryId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid repository ID',
+        userMessage: 'Please provide a valid repository ID'
+      });
+    }
+
+    const repository = await RepositoryModel.findById(repositoryId);
     
     if (!repository) {
       return res.status(404).json({
         success: false,
-        message: 'Repository not found'
+        message: 'Repository not found',
+        userMessage: 'The requested repository does not exist'
       });
     }
 
     let symbols;
 
     if (search) {
-      symbols = await SymbolModel.search(parseInt(id), search);
+      symbols = await SymbolModel.search(repositoryId, search);
     } else if (type) {
-      symbols = await SymbolModel.findByType(parseInt(id), type);
+      symbols = await SymbolModel.findByType(repositoryId, type);
     } else {
-      symbols = await SymbolModel.findByRepositoryId(parseInt(id));
+      symbols = await SymbolModel.findByRepositoryId(repositoryId);
     }
 
-    const statistics = await SymbolModel.getStatistics(parseInt(id));
+    const statistics = await SymbolModel.getStatistics(repositoryId);
 
     const grouped = {
       functions: symbols.filter(s => s.symbol_type === 'function'),
@@ -144,6 +167,7 @@ export const getRepositorySymbols = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch symbols',
+      userMessage: 'Unable to load symbols. Please try again later',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
@@ -158,24 +182,35 @@ export const searchRepositorySymbols = async (req, res) => {
   try {
     const { id } = req.params;
     const { query, type } = req.query;
+    const repositoryId = parseInt(id);
+
+    if (!repositoryId || isNaN(repositoryId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid repository ID',
+        userMessage: 'Please provide a valid repository ID'
+      });
+    }
 
     if (!query || query.trim() === '') {
       return res.status(400).json({
         success: false,
-        message: 'Search query is required'
+        message: 'Search query is required',
+        userMessage: 'Please enter a search term'
       });
     }
 
-    const repository = await RepositoryModel.findById(parseInt(id));
+    const repository = await RepositoryModel.findById(repositoryId);
     
     if (!repository) {
       return res.status(404).json({
         success: false,
-        message: 'Repository not found'
+        message: 'Repository not found',
+        userMessage: 'The requested repository does not exist'
       });
     }
 
-    const symbols = await SymbolModel.searchWithFilter(parseInt(id), query.trim(), type || null);
+    const symbols = await SymbolModel.searchWithFilter(repositoryId, query.trim(), type || null);
 
     const statistics = {
       total: symbols.length,
@@ -201,6 +236,7 @@ export const searchRepositorySymbols = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to search symbols',
+      userMessage: 'Search failed. Please try again later',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
@@ -215,29 +251,41 @@ export const chatWithRepository = async (req, res) => {
   try {
     const { id } = req.params;
     const { question } = req.body;
+    const repositoryId = parseInt(id);
+
+    if (!repositoryId || isNaN(repositoryId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid repository ID',
+        userMessage: 'Please provide a valid repository ID'
+      });
+    }
 
     if (!question || question.trim() === '') {
       return res.status(400).json({
         success: false,
-        message: 'Question is required'
+        message: 'Question is required',
+        userMessage: 'Please enter a question'
       });
     }
 
-    const repository = await RepositoryModel.findById(parseInt(id));
+    const repository = await RepositoryModel.findById(repositoryId);
     
     if (!repository) {
       return res.status(404).json({
         success: false,
-        message: 'Repository not found'
+        message: 'Repository not found',
+        userMessage: 'The requested repository does not exist'
       });
     }
 
-    const context = await contextService.getRelevantContext(parseInt(id), question);
+    const context = await contextService.getRelevantContext(repositoryId, question);
 
     if (context.totalSymbols === 0 && context.totalFiles === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Repository must be scanned and analyzed before chat'
+        message: 'Repository must be scanned and analyzed before chat',
+        userMessage: 'Please scan and analyze the repository first'
       });
     }
 
@@ -269,6 +317,7 @@ export const chatWithRepository = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to answer question',
+      userMessage: 'Unable to get response. Please try again later',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
@@ -282,28 +331,39 @@ export const chatWithRepository = async (req, res) => {
 export const generateRepositorySummary = async (req, res) => {
   try {
     const { id } = req.params;
+    const repositoryId = parseInt(id);
 
-    const repository = await RepositoryModel.findById(parseInt(id));
+    if (!repositoryId || isNaN(repositoryId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid repository ID',
+        userMessage: 'Please provide a valid repository ID'
+      });
+    }
+
+    const repository = await RepositoryModel.findById(repositoryId);
     
     if (!repository) {
       return res.status(404).json({
         success: false,
-        message: 'Repository not found'
+        message: 'Repository not found',
+        userMessage: 'The requested repository does not exist'
       });
     }
 
-    const symbols = await SymbolModel.findByRepositoryId(parseInt(id));
-    const files = await RepositoryFileModel.findByRepositoryId(parseInt(id));
+    const symbols = await SymbolModel.findByRepositoryId(repositoryId);
+    const files = await RepositoryFileModel.findByRepositoryId(repositoryId);
 
     if (symbols.length === 0 && files.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'Repository must be scanned and analyzed before generating summary'
+        message: 'Repository must be scanned and analyzed before generating summary',
+        userMessage: 'Please scan and analyze the repository first'
       });
     }
 
     const context = await contextService.getRelevantContext(
-      parseInt(id), 
+      repositoryId, 
       'Generate a comprehensive project summary'
     );
 
@@ -329,6 +389,7 @@ export const generateRepositorySummary = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to generate summary',
+      userMessage: 'Unable to generate summary. Please try again later',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
@@ -342,20 +403,30 @@ export const generateRepositorySummary = async (req, res) => {
 export const getRepositoryInsights = async (req, res) => {
   try {
     const { id } = req.params;
+    const repositoryId = parseInt(id);
 
-    const repository = await RepositoryModel.findById(parseInt(id));
+    if (!repositoryId || isNaN(repositoryId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid repository ID',
+        userMessage: 'Please provide a valid repository ID'
+      });
+    }
+
+    const repository = await RepositoryModel.findById(repositoryId);
     
     if (!repository) {
       return res.status(404).json({
         success: false,
-        message: 'Repository not found'
+        message: 'Repository not found',
+        userMessage: 'The requested repository does not exist'
       });
     }
 
-    const statistics = await SymbolModel.getStatistics(parseInt(id));
-    const totalFiles = await RepositoryFileModel.countByRepositoryId(parseInt(id));
+    const statistics = await SymbolModel.getStatistics(repositoryId);
+    const totalFiles = await RepositoryFileModel.countByRepositoryId(repositoryId);
     
-    const fileExtensions = await RepositoryFileModel.getFileExtensionStats(parseInt(id));
+    const fileExtensions = await RepositoryFileModel.getFileExtensionStats(repositoryId);
 
     res.status(200).json({
       success: true,
@@ -386,6 +457,7 @@ export const getRepositoryInsights = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to fetch insights',
+      userMessage: 'Unable to load insights. Please try again later',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }

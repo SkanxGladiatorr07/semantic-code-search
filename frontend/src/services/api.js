@@ -51,14 +51,31 @@ apiClient.interceptors.response.use(
   },
   (error) => {
     if (error.response) {
-      // Server responded with error status
       console.error('Response error:', error.response.status, error.response.data);
+      
+      const status = error.response.status;
+      const userMessage = error.response.data?.userMessage;
+      const message = error.response.data?.message || 'An error occurred';
+      
+      if (userMessage) {
+        error.userMessage = userMessage;
+      } else if (status === 404) {
+        error.userMessage = 'Resource not found';
+      } else if (status === 400) {
+        error.userMessage = message || 'Invalid request';
+      } else if (status === 500) {
+        error.userMessage = 'Server error. Please try again later.';
+      } else if (status === 503) {
+        error.userMessage = 'Service unavailable. Please try again later.';
+      } else {
+        error.userMessage = message;
+      }
     } else if (error.request) {
-      // Request made but no response received
       console.error('Network error: No response received');
+      error.userMessage = 'Network error. Please check your connection.';
     } else {
-      // Error in request setup
       console.error('Request setup error:', error.message);
+      error.userMessage = 'Failed to send request. Please try again.';
     }
     return Promise.reject(error);
   }
@@ -118,9 +135,9 @@ export const getDetailedHealth = async () => {
 export const getRepositories = async () => {
   try {
     const response = await apiClient.get('/repositories');
-    return response.data;
+    return response.data || { success: true, data: [] };
   } catch (error) {
-    throw new Error('Failed to fetch repositories');
+    throw new Error(error.userMessage || 'Failed to fetch repositories');
   }
 };
 
@@ -132,9 +149,9 @@ export const getRepositories = async () => {
 export const getRepositoryById = async (id) => {
   try {
     const response = await apiClient.get(`/repositories/${id}`);
-    return response.data;
+    return response.data || { success: true, data: null };
   } catch (error) {
-    throw new Error('Failed to fetch repository');
+    throw new Error(error.userMessage || 'Failed to fetch repository');
   }
 };
 
@@ -151,10 +168,7 @@ export const createRepository = async (repositoryData) => {
     const response = await apiClient.post('/repositories', repositoryData);
     return response.data;
   } catch (error) {
-    if (error.response && error.response.data) {
-      throw new Error(error.response.data.message || 'Failed to create repository');
-    }
-    throw new Error('Failed to create repository');
+    throw new Error(error.userMessage || error.response?.data?.message || 'Failed to create repository');
   }
 };
 
@@ -169,10 +183,7 @@ export const updateRepository = async (id, repositoryData) => {
     const response = await apiClient.put(`/repositories/${id}`, repositoryData);
     return response.data;
   } catch (error) {
-    if (error.response && error.response.data) {
-      throw new Error(error.response.data.message || 'Failed to update repository');
-    }
-    throw new Error('Failed to update repository');
+    throw new Error(error.userMessage || error.response?.data?.message || 'Failed to update repository');
   }
 };
 
@@ -186,10 +197,7 @@ export const deleteRepository = async (id) => {
     const response = await apiClient.delete(`/repositories/${id}`);
     return response.data;
   } catch (error) {
-    if (error.response && error.response.data) {
-      throw new Error(error.response.data.message || 'Failed to delete repository');
-    }
-    throw new Error('Failed to delete repository');
+    throw new Error(error.userMessage || error.response?.data?.message || 'Failed to delete repository');
   }
 };
 
@@ -201,9 +209,9 @@ export const deleteRepository = async (id) => {
 export const searchRepositories = async (query) => {
   try {
     const response = await apiClient.get(`/repositories/search?q=${encodeURIComponent(query)}`);
-    return response.data;
+    return response.data || { success: true, data: [] };
   } catch (error) {
-    throw new Error('Failed to search repositories');
+    throw new Error(error.userMessage || 'Failed to search repositories');
   }
 };
 
@@ -215,12 +223,9 @@ export const searchRepositories = async (query) => {
 export const scanRepository = async (id) => {
   try {
     const response = await apiClient.post(`/repositories/${id}/scan`);
-    return response.data;
+    return response.data || { success: true, data: {} };
   } catch (error) {
-    if (error.response && error.response.data) {
-      throw new Error(error.response.data.message || 'Failed to scan repository');
-    }
-    throw new Error('Failed to scan repository');
+    throw new Error(error.userMessage || error.response?.data?.message || 'Failed to scan repository');
   }
 };
 
@@ -232,12 +237,9 @@ export const scanRepository = async (id) => {
 export const getRepositoryFiles = async (id) => {
   try {
     const response = await apiClient.get(`/repositories/${id}/files`);
-    return response.data;
+    return response.data || { success: true, data: { files: [] } };
   } catch (error) {
-    if (error.response && error.response.data) {
-      throw new Error(error.response.data.message || 'Failed to fetch repository files');
-    }
-    throw new Error('Failed to fetch repository files');
+    throw new Error(error.userMessage || error.response?.data?.message || 'Failed to fetch repository files');
   }
 };
 
@@ -249,12 +251,9 @@ export const getRepositoryFiles = async (id) => {
 export const analyzeRepository = async (id) => {
   try {
     const response = await apiClient.post(`/repositories/${id}/analyze`);
-    return response.data;
+    return response.data || { success: true, data: {} };
   } catch (error) {
-    if (error.response && error.response.data) {
-      throw new Error(error.response.data.message || 'Failed to analyze repository');
-    }
-    throw new Error('Failed to analyze repository');
+    throw new Error(error.userMessage || error.response?.data?.message || 'Failed to analyze repository');
   }
 };
 
@@ -267,12 +266,9 @@ export const analyzeRepository = async (id) => {
 export const getRepositorySymbols = async (id, params = {}) => {
   try {
     const response = await apiClient.get(`/repositories/${id}/symbols`, { params });
-    return response.data;
+    return response.data || { success: true, data: { symbols: [], statistics: {}, grouped: {} } };
   } catch (error) {
-    if (error.response && error.response.data) {
-      throw new Error(error.response.data.message || 'Failed to fetch symbols');
-    }
-    throw new Error('Failed to fetch symbols');
+    throw new Error(error.userMessage || error.response?.data?.message || 'Failed to fetch symbols');
   }
 };
 
@@ -288,12 +284,9 @@ export const searchRepositorySymbols = async (id, query, type = null) => {
     const params = { query };
     if (type) params.type = type;
     const response = await apiClient.get(`/repositories/${id}/search`, { params });
-    return response.data;
+    return response.data || { success: true, data: { symbols: [], statistics: {} } };
   } catch (error) {
-    if (error.response && error.response.data) {
-      throw new Error(error.response.data.message || 'Failed to search symbols');
-    }
-    throw new Error('Failed to search symbols');
+    throw new Error(error.userMessage || error.response?.data?.message || 'Failed to search symbols');
   }
 };
 
@@ -306,12 +299,9 @@ export const searchRepositorySymbols = async (id, query, type = null) => {
 export const chatWithRepository = async (id, question) => {
   try {
     const response = await apiClient.post(`/repositories/${id}/chat`, { question });
-    return response.data;
+    return response.data || { success: true, data: { answer: '', context_size: {} } };
   } catch (error) {
-    if (error.response && error.response.data) {
-      throw new Error(error.response.data.message || 'Failed to get response');
-    }
-    throw new Error('Failed to get response');
+    throw new Error(error.userMessage || error.response?.data?.message || 'Failed to get response');
   }
 };
 
@@ -323,12 +313,9 @@ export const chatWithRepository = async (id, question) => {
 export const getRepositoryInsights = async (id) => {
   try {
     const response = await apiClient.get(`/repositories/${id}/insights`);
-    return response.data;
+    return response.data || { success: true, data: { repository: {}, statistics: {}, file_types: [] } };
   } catch (error) {
-    if (error.response && error.response.data) {
-      throw new Error(error.response.data.message || 'Failed to fetch insights');
-    }
-    throw new Error('Failed to fetch insights');
+    throw new Error(error.userMessage || error.response?.data?.message || 'Failed to fetch insights');
   }
 };
 
@@ -340,12 +327,9 @@ export const getRepositoryInsights = async (id) => {
 export const generateRepositorySummary = async (id) => {
   try {
     const response = await apiClient.post(`/repositories/${id}/summary`);
-    return response.data;
+    return response.data || { success: true, data: { summary: {}, statistics: {} } };
   } catch (error) {
-    if (error.response && error.response.data) {
-      throw new Error(error.response.data.message || 'Failed to generate summary');
-    }
-    throw new Error('Failed to generate summary');
+    throw new Error(error.userMessage || error.response?.data?.message || 'Failed to generate summary');
   }
 };
 
