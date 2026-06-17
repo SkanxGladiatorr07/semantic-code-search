@@ -17,20 +17,38 @@ export const scanRepository = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Get repository
     const repository = await RepositoryModel.findById(parseInt(id));
     
     if (!repository) {
       return res.status(404).json({
         success: false,
-        message: 'Repository not found'
+        message: 'Repository not found',
+        userMessage: 'Repository not found'
       });
     }
 
-    // Update status to scanning
+    if (repository.scan_status === 'scanning') {
+      return res.status(409).json({
+        success: false,
+        message: 'Repository is already being scanned',
+        userMessage: 'Scan already in progress'
+      });
+    }
+
+    if (repository.scan_status === 'completed' && repository.total_files > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'Repository already scanned. Delete existing scan data to rescan.',
+        userMessage: 'Repository already scanned',
+        data: {
+          repository_id: repository.id,
+          total_files: repository.total_files
+        }
+      });
+    }
+
     await RepositoryModel.updateScanStatus(repository.id, 'scanning', 0);
 
-    // Clone repository
     let localPath;
     try {
       localPath = await gitCloner.cloneRepository(repository.github_url, repository.id);
@@ -39,11 +57,11 @@ export const scanRepository = async (req, res) => {
       return res.status(500).json({
         success: false,
         message: 'Failed to clone repository',
+        userMessage: 'Failed to clone repository',
         error: error.message
       });
     }
 
-    // Scan files
     let files;
     try {
       files = await fileScanner.scanRepository(localPath);
@@ -52,22 +70,19 @@ export const scanRepository = async (req, res) => {
       return res.status(500).json({
         success: false,
         message: 'Failed to scan repository files',
+        userMessage: 'Failed to scan repository files',
         error: error.message
       });
     }
 
-    // Delete existing files for this repository
     await RepositoryFileModel.deleteByRepositoryId(repository.id);
 
-    // Save files to database
     if (files.length > 0) {
       await RepositoryFileModel.createBatch(repository.id, files);
     }
 
-    // Update scan status to completed
     await RepositoryModel.updateScanStatus(repository.id, 'completed', files.length);
 
-    // Get statistics
     const statistics = fileScanner.getStatistics(files);
 
     res.status(200).json({
@@ -82,9 +97,15 @@ export const scanRepository = async (req, res) => {
 
   } catch (error) {
     console.error('Error in scanRepository:', error);
+    
+    if (req.params.id) {
+      await RepositoryModel.updateScanStatus(parseInt(req.params.id), 'failed', 0).catch(() => {});
+    }
+    
     res.status(500).json({
       success: false,
       message: 'Failed to scan repository',
+      userMessage: 'An error occurred during scanning',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }

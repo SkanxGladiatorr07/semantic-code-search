@@ -18,7 +18,10 @@ class RepositoryModel {
     try {
       const pool = getPool();
       const [rows] = await pool.query(
-        'SELECT id, repository_name, github_url, description, created_at, updated_at FROM repositories ORDER BY created_at DESC'
+        `SELECT id, repository_name, github_url, description, scan_status, total_files, 
+         created_at, updated_at, scanned_at 
+         FROM repositories 
+         ORDER BY created_at DESC`
       );
       return rows;
     } catch (error) {
@@ -36,7 +39,10 @@ class RepositoryModel {
     try {
       const pool = getPool();
       const [rows] = await pool.query(
-        'SELECT id, repository_name, github_url, description, created_at, updated_at FROM repositories WHERE id = ?',
+        `SELECT id, repository_name, github_url, description, scan_status, total_files, 
+         created_at, updated_at, scanned_at 
+         FROM repositories 
+         WHERE id = ?`,
         [id]
       );
       
@@ -154,7 +160,11 @@ class RepositoryModel {
       const pool = getPool();
       const searchTerm = `%${query}%`;
       const [rows] = await pool.query(
-        'SELECT id, repository_name, github_url, description, created_at FROM repositories WHERE repository_name LIKE ? OR description LIKE ? ORDER BY created_at DESC',
+        `SELECT id, repository_name, github_url, description, scan_status, total_files, 
+         created_at, scanned_at 
+         FROM repositories 
+         WHERE repository_name LIKE ? OR description LIKE ? 
+         ORDER BY created_at DESC`,
         [searchTerm, searchTerm]
       );
       

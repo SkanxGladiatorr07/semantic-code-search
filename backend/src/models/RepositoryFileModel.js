@@ -17,18 +17,23 @@ class RepositoryFileModel {
 
     try {
       const pool = getPool();
-      const values = files.map(file => [
-        repositoryId,
-        file.file_name,
-        file.file_path,
-        file.file_extension,
-        file.file_size || 0
-      ]);
+      
+      const batchSize = 1000;
+      for (let i = 0; i < files.length; i += batchSize) {
+        const batch = files.slice(i, i + batchSize);
+        const values = batch.map(file => [
+          repositoryId,
+          file.file_name,
+          file.file_path,
+          file.file_extension,
+          file.file_size || 0
+        ]);
 
-      await pool.query(
-        'INSERT INTO repository_files (repository_id, file_name, file_path, file_extension, file_size) VALUES ?',
-        [values]
-      );
+        await pool.query(
+          'INSERT INTO repository_files (repository_id, file_name, file_path, file_extension, file_size) VALUES ?',
+          [values]
+        );
+      }
     } catch (error) {
       console.error('Error creating files batch:', error);
       throw new Error('Failed to save repository files');
@@ -44,7 +49,10 @@ class RepositoryFileModel {
     try {
       const pool = getPool();
       const [rows] = await pool.query(
-        'SELECT id, file_name, file_path, file_extension, file_size, created_at FROM repository_files WHERE repository_id = ? ORDER BY file_path',
+        `SELECT id, file_name, file_path, file_extension, file_size 
+         FROM repository_files 
+         WHERE repository_id = ? 
+         ORDER BY file_path`,
         [repositoryId]
       );
       return rows;
@@ -97,20 +105,32 @@ class RepositoryFileModel {
   async getStatistics(repositoryId) {
     try {
       const pool = getPool();
-      const [rows] = await pool.query(
+      const [countRows] = await pool.query(
         `SELECT 
           COUNT(*) as total_files,
           COUNT(DISTINCT file_extension) as total_extensions,
-          SUM(file_size) as total_size,
+          SUM(file_size) as total_size
+        FROM repository_files 
+        WHERE repository_id = ?`,
+        [repositoryId]
+      );
+      
+      const [extensionRows] = await pool.query(
+        `SELECT 
           file_extension,
           COUNT(*) as count
         FROM repository_files 
         WHERE repository_id = ?
         GROUP BY file_extension
-        ORDER BY count DESC`,
+        ORDER BY count DESC
+        LIMIT 10`,
         [repositoryId]
       );
-      return rows;
+      
+      return {
+        ...countRows[0],
+        by_extension: extensionRows
+      };
     } catch (error) {
       console.error('Error getting statistics:', error);
       throw new Error('Failed to get file statistics');
@@ -127,12 +147,13 @@ class RepositoryFileModel {
       const pool = getPool();
       const [rows] = await pool.query(
         `SELECT 
-          file_extension,
+          COALESCE(file_extension, '') as file_extension,
           COUNT(*) as count
         FROM repository_files 
         WHERE repository_id = ?
         GROUP BY file_extension
-        ORDER BY count DESC`,
+        ORDER BY count DESC
+        LIMIT 20`,
         [repositoryId]
       );
       return rows;

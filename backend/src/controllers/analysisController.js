@@ -48,6 +48,20 @@ export const analyzeRepository = async (req, res) => {
       });
     }
 
+    const existingSymbols = await SymbolModel.getStatistics(repositoryId);
+    if (existingSymbols.total > 0) {
+      return res.status(409).json({
+        success: false,
+        message: 'Repository already analyzed',
+        userMessage: 'Repository already analyzed',
+        data: {
+          repository_id: repositoryId,
+          total_symbols: existingSymbols.total,
+          statistics: existingSymbols
+        }
+      });
+    }
+
     const files = await RepositoryFileModel.findByRepositoryId(repositoryId);
     
     if (files.length === 0) {
@@ -64,6 +78,18 @@ export const analyzeRepository = async (req, res) => {
     const parsedFiles = await codeParser.parseFiles(files, repositoryPath);
     
     const symbols = symbolExtractor.extractSymbols(parsedFiles);
+
+    if (symbols.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'Repository analyzed - no symbols found',
+        data: {
+          repository_id: repositoryId,
+          total_symbols: 0,
+          statistics: { total: 0, functions: 0, classes: 0, interfaces: 0 }
+        }
+      });
+    }
 
     const symbolsToSave = [];
     symbols.forEach(symbol => {
@@ -134,16 +160,20 @@ export const getRepositorySymbols = async (req, res) => {
     }
 
     let symbols;
+    let statistics;
 
     if (search) {
       symbols = await SymbolModel.search(repositoryId, search);
+      statistics = await SymbolModel.getStatistics(repositoryId);
     } else if (type) {
       symbols = await SymbolModel.findByType(repositoryId, type);
+      statistics = await SymbolModel.getStatistics(repositoryId);
     } else {
-      symbols = await SymbolModel.findByRepositoryId(repositoryId);
+      [symbols, statistics] = await Promise.all([
+        SymbolModel.findByRepositoryId(repositoryId),
+        SymbolModel.getStatistics(repositoryId)
+      ]);
     }
-
-    const statistics = await SymbolModel.getStatistics(repositoryId);
 
     const grouped = {
       functions: symbols.filter(s => s.symbol_type === 'function'),
@@ -351,8 +381,10 @@ export const generateRepositorySummary = async (req, res) => {
       });
     }
 
-    const symbols = await SymbolModel.findByRepositoryId(repositoryId);
-    const files = await RepositoryFileModel.findByRepositoryId(repositoryId);
+    const [symbols, files] = await Promise.all([
+      SymbolModel.findByRepositoryId(repositoryId),
+      RepositoryFileModel.findByRepositoryId(repositoryId)
+    ]);
 
     if (symbols.length === 0 && files.length === 0) {
       return res.status(400).json({
@@ -423,10 +455,11 @@ export const getRepositoryInsights = async (req, res) => {
       });
     }
 
-    const statistics = await SymbolModel.getStatistics(repositoryId);
-    const totalFiles = await RepositoryFileModel.countByRepositoryId(repositoryId);
-    
-    const fileExtensions = await RepositoryFileModel.getFileExtensionStats(repositoryId);
+    const [statistics, totalFiles, fileExtensions] = await Promise.all([
+      SymbolModel.getStatistics(repositoryId),
+      RepositoryFileModel.countByRepositoryId(repositoryId),
+      RepositoryFileModel.getFileExtensionStats(repositoryId)
+    ]);
 
     res.status(200).json({
       success: true,

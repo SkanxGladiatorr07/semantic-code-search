@@ -17,17 +17,22 @@ class SymbolModel {
 
     try {
       const pool = getPool();
-      const values = symbols.map(symbol => [
-        repositoryId,
-        symbol.file_id,
-        symbol.symbol_name,
-        symbol.symbol_type
-      ]);
+      
+      const batchSize = 1000;
+      for (let i = 0; i < symbols.length; i += batchSize) {
+        const batch = symbols.slice(i, i + batchSize);
+        const values = batch.map(symbol => [
+          repositoryId,
+          symbol.file_id,
+          symbol.symbol_name,
+          symbol.symbol_type
+        ]);
 
-      await pool.query(
-        'INSERT IGNORE INTO symbols (repository_id, file_id, symbol_name, symbol_type) VALUES ?',
-        [values]
-      );
+        await pool.query(
+          'INSERT IGNORE INTO symbols (repository_id, file_id, symbol_name, symbol_type) VALUES ?',
+          [values]
+        );
+      }
     } catch (error) {
       console.error('Error creating symbols batch:', error);
       throw new Error('Failed to save symbols');
@@ -43,12 +48,12 @@ class SymbolModel {
     try {
       const pool = getPool();
       const [rows] = await pool.query(
-        `SELECT s.id, s.repository_id, s.file_id, s.symbol_name, s.symbol_type, s.created_at,
+        `SELECT s.id, s.repository_id, s.file_id, s.symbol_name, s.symbol_type,
                 f.file_name, f.file_path, f.file_extension
          FROM symbols s
-         JOIN repository_files f ON s.file_id = f.id
+         INNER JOIN repository_files f ON s.file_id = f.id
          WHERE s.repository_id = ?
-         ORDER BY s.symbol_name`,
+         ORDER BY f.file_path, s.symbol_name`,
         [repositoryId]
       );
       return rows;
@@ -68,12 +73,12 @@ class SymbolModel {
     try {
       const pool = getPool();
       const [rows] = await pool.query(
-        `SELECT s.id, s.repository_id, s.file_id, s.symbol_name, s.symbol_type, s.created_at,
+        `SELECT s.id, s.repository_id, s.file_id, s.symbol_name, s.symbol_type,
                 f.file_name, f.file_path, f.file_extension
          FROM symbols s
-         JOIN repository_files f ON s.file_id = f.id
+         INNER JOIN repository_files f ON s.file_id = f.id
          WHERE s.repository_id = ? AND s.symbol_type = ?
-         ORDER BY s.symbol_name`,
+         ORDER BY f.file_path, s.symbol_name`,
         [repositoryId, symbolType]
       );
       return rows;
@@ -146,8 +151,8 @@ class SymbolModel {
       rows.forEach(row => {
         stats.total += row.count;
         if (row.symbol_type === 'function') stats.functions = row.count;
-        if (row.symbol_type === 'class') stats.classes = row.count;
-        if (row.symbol_type === 'interface') stats.interfaces = row.count;
+        else if (row.symbol_type === 'class') stats.classes = row.count;
+        else if (row.symbol_type === 'interface') stats.interfaces = row.count;
       });
 
       return stats;
@@ -168,13 +173,19 @@ class SymbolModel {
       const pool = getPool();
       const searchTerm = `%${query}%`;
       const [rows] = await pool.query(
-        `SELECT s.id, s.repository_id, s.file_id, s.symbol_name, s.symbol_type, s.created_at,
+        `SELECT s.id, s.repository_id, s.file_id, s.symbol_name, s.symbol_type,
                 f.file_name, f.file_path, f.file_extension
          FROM symbols s
-         JOIN repository_files f ON s.file_id = f.id
+         INNER JOIN repository_files f ON s.file_id = f.id
          WHERE s.repository_id = ? AND s.symbol_name LIKE ?
-         ORDER BY s.symbol_name`,
-        [repositoryId, searchTerm]
+         ORDER BY 
+           CASE 
+             WHEN s.symbol_name LIKE ? THEN 0
+             ELSE 1
+           END,
+           s.symbol_name
+         LIMIT 100`,
+        [repositoryId, searchTerm, query + '%']
       );
       return rows;
     } catch (error) {
@@ -195,10 +206,10 @@ class SymbolModel {
       const pool = getPool();
       const searchTerm = `%${query}%`;
       
-      let sql = `SELECT s.id, s.repository_id, s.file_id, s.symbol_name, s.symbol_type, s.created_at,
+      let sql = `SELECT s.id, s.repository_id, s.file_id, s.symbol_name, s.symbol_type,
                         f.file_name, f.file_path, f.file_extension
                  FROM symbols s
-                 JOIN repository_files f ON s.file_id = f.id
+                 INNER JOIN repository_files f ON s.file_id = f.id
                  WHERE s.repository_id = ? AND s.symbol_name LIKE ?`;
       
       const params = [repositoryId, searchTerm];
@@ -208,7 +219,16 @@ class SymbolModel {
         params.push(symbolType);
       }
       
-      sql += ` ORDER BY s.symbol_name`;
+      sql += ` ORDER BY 
+                 CASE 
+                   WHEN s.symbol_name LIKE ? THEN 0
+                   ELSE 1
+                 END,
+                 f.file_path,
+                 s.symbol_name
+               LIMIT 100`;
+      
+      params.push(query + '%');
       
       const [rows] = await pool.query(sql, params);
       return rows;

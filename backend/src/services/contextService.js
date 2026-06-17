@@ -20,9 +20,11 @@ class ContextService {
    */
   async getRelevantContext(repositoryId, question) {
     try {
-      const repository = await RepositoryModel.findById(repositoryId);
-      const symbols = await SymbolModel.findByRepositoryId(repositoryId);
-      const files = await RepositoryFileModel.findByRepositoryId(repositoryId);
+      const [repository, symbols, files] = await Promise.all([
+        RepositoryModel.findById(repositoryId),
+        SymbolModel.findByRepositoryId(repositoryId),
+        RepositoryFileModel.findByRepositoryId(repositoryId)
+      ]);
 
       const relevantFiles = this.findRelevantFiles(question, symbols, files);
       
