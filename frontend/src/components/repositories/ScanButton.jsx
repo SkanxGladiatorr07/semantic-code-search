@@ -1,8 +1,3 @@
-/**
- * Scan Button Component
- * Button to trigger repository scanning
- */
-
 import { useState } from 'react';
 import { scanRepository } from '../../services/api';
 
@@ -32,22 +27,21 @@ const ScanButton = ({ repository, onScanComplete, showToast }) => {
     }
   };
 
-  const getScanStatusColor = () => {
-    switch (repository.scan_status) {
-      case 'completed':
-        return 'green';
-      case 'scanning':
-        return 'blue';
-      case 'failed':
-        return 'red';
-      default:
-        return 'gray';
-    }
-  };
+  const isCompleted = repository.scan_status === 'completed';
+  const isScanning = scanning || repository.scan_status === 'scanning';
 
-  const getScanStatusText = () => {
-    switch (repository.scan_status) {
-      case 'completed':
+  return (
+    <button
+      onClick={handleScan}
+      disabled={isScanning}
+      className={`btn btn-sm ${isCompleted ? 'btn-success' : 'btn-primary'}`}
+    >
+      {isScanning ? '⏳ Scanning...' : isCompleted ? '✓ Scanned' : '📂 Scan'}
+    </button>
+  );
+};
+
+export default ScanButton;
         return `Scanned (${repository.total_files} files)`;
       case 'scanning':
         return 'Scanning...';

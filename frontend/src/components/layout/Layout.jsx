@@ -1,21 +1,35 @@
-/**
- * Layout Component
- * Provides consistent layout structure across all pages
- * Includes the Navbar and wraps page content
- */
-
+import { Outlet } from 'react-router-dom';
 import Navbar from '../common/Navbar';
+import '../../styles/buttons.css';
+import '../../styles/layout.css';
 
-const Layout = ({ children }) => {
+const Layout = () => {
   return (
-    <div className="app-container">
+    <div className="app-layout">
       <Navbar />
       <main className="main-content">
-        {children}
+        <Outlet />
       </main>
-      <footer className="app-footer">
-        <p>&copy; 2026 Semantic Code Search.</p>
-      </footer>
+      
+      <style jsx>{`
+        .app-layout {
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          background: #f9fafb;
+        }
+        
+        .main-content {
+          flex: 1;
+          padding-top: 70px;
+        }
+        
+        @media (max-width: 480px) {
+          .main-content {
+            padding-top: 60px;
+          }
+        }
+      `}</style>
     </div>
   );
 };
