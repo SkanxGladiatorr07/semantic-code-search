@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getRepositoryById, generateRepositorySummary } from '../services/api';
+import LoadingOverlay from '../components/common/LoadingOverlay';
+
+const RepositorySummary = () => {
+  const { id } = useParams();
+  const [repository, setRepository] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
 const RepositorySummary = () => {
   const { id } = useParams();
@@ -51,6 +59,7 @@ const RepositorySummary = () => {
 
   return (
     <div className="summary-container">
+      {loading && <LoadingOverlay message="Generating summary..." submessage="Analyzing repository structure and code..." />}
       <div className="summary-header">
         <div className="breadcrumb">
           <Link to="/repositories" className="breadcrumb-link">Repositories</Link>

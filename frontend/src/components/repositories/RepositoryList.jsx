@@ -9,6 +9,8 @@ import RepositoryForm from './RepositoryForm';
 import ScanButton from './ScanButton';
 import AnalyzeButton from './AnalyzeButton';
 import { Link } from 'react-router-dom';
+import { useToast } from '../../hooks/useToast';
+import ToastContainer from '../common/ToastContainer';
 
 const RepositoryList = () => {
   const [repositories, setRepositories] = useState([]);
@@ -18,6 +20,7 @@ const RepositoryList = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingRepository, setEditingRepository] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const { toasts, removeToast, showToast, success, error: errorToast } = useToast();
 
   // Fetch repositories on component mount
   useEffect(() => {
@@ -73,9 +76,10 @@ const RepositoryList = () => {
       await deleteRepository(id);
       setRepositories(prev => prev.filter(repo => repo.id !== id));
       setDeleteConfirmId(null);
+      success('Repository deleted successfully');
     } catch (err) {
       console.error('Error deleting repository:', err);
-      setError(err.userMessage || 'Failed to delete repository.');
+      errorToast(err.userMessage || 'Failed to delete repository');
       setDeleteConfirmId(null);
     }
   };
@@ -132,6 +136,7 @@ const RepositoryList = () => {
 
   return (
     <div className="repository-list-container">
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
       {/* Header */}
       <div className="repository-header">
         <h2>My Repositories</h2>
@@ -300,10 +305,12 @@ const RepositoryList = () => {
                       <ScanButton 
                         repository={repo} 
                         onScanComplete={fetchRepositories}
+                        showToast={showToast}
                       />
                       <AnalyzeButton 
                         repository={repo} 
                         onAnalyzeComplete={fetchRepositories}
+                        showToast={showToast}
                       />
                       <Link
                         to={`/repositories/${repo.id}/chat`}

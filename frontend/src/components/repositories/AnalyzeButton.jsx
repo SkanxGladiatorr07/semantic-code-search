@@ -6,23 +6,27 @@
 import { useState } from 'react';
 import { analyzeRepository } from '../../services/api';
 
-const AnalyzeButton = ({ repository, onAnalyzeComplete }) => {
+const AnalyzeButton = ({ repository, onAnalyzeComplete, showToast }) => {
   const [analyzing, setAnalyzing] = useState(false);
-  const [error, setError] = useState(null);
 
   const handleAnalyze = async () => {
     setAnalyzing(true);
-    setError(null);
 
     try {
       const result = await analyzeRepository(repository.id);
+      
+      if (showToast) {
+        showToast('Repository analyzed successfully!', 'success');
+      }
       
       if (onAnalyzeComplete) {
         onAnalyzeComplete(result.data);
       }
     } catch (err) {
       console.error('Error analyzing repository:', err);
-      setError(err.message || 'Failed to analyze repository');
+      if (showToast) {
+        showToast(err.message || 'Failed to analyze repository', 'error');
+      }
     } finally {
       setAnalyzing(false);
     }
@@ -45,14 +49,6 @@ const AnalyzeButton = ({ repository, onAnalyzeComplete }) => {
           <>🔬 Analyze Repository</>
         )}
       </button>
-
-      {error && (
-        <div className="analyze-error">
-          <span style={{ color: 'red', fontSize: '0.875rem' }}>
-            ❌ {error}
-          </span>
-        </div>
-      )}
 
       <style jsx>{`
         .analyze-button-container {

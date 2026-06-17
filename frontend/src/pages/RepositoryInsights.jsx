@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getRepositoryInsights } from '../services/api';
+import LoadingOverlay from '../components/common/LoadingOverlay';
 
 const RepositoryInsights = () => {
   const { id } = useParams();
@@ -42,20 +43,10 @@ const RepositoryInsights = () => {
     });
   };
 
-  if (loading) {
-    return (
-      <div className="insights-container">
-        <div className="loading-state">
-          <div className="spinner"></div>
-          <p>Loading insights...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="insights-container">
+  return (
+    <div className="insights-container">
+      {loading && <LoadingOverlay message="Loading insights..." />}
+      {!loading && error && (
         <div className="error-state">
           <h3>❌ Error</h3>
           <p>{error}</p>
@@ -63,36 +54,30 @@ const RepositoryInsights = () => {
             Retry
           </button>
         </div>
-      </div>
-    );
-  }
+      )}
 
-  if (!insights) return null;
+      {!loading && !error && insights && (
+        <>
+          <div className="insights-header">
+            <div className="breadcrumb">
+              <Link to="/repositories" className="breadcrumb-link">Repositories</Link>
+              <span className="breadcrumb-separator">/</span>
+              <Link to={`/repositories`} className="breadcrumb-link">
+                {insights.repository.repository_name}
+              </Link>
+              <span className="breadcrumb-separator">/</span>
+              <span className="breadcrumb-current">Insights</span>
+            </div>
 
-  const { repository, statistics, file_types, last_scan_date } = insights;
+            <h2>📊 Repository Insights</h2>
+            <p className="insights-subtitle">
+              Detailed statistics and analysis for {insights.repository.repository_name}
+            </p>
+          </div>
 
-  return (
-    <div className="insights-container">
-      <div className="insights-header">
-        <div className="breadcrumb">
-          <Link to="/repositories" className="breadcrumb-link">Repositories</Link>
-          <span className="breadcrumb-separator">/</span>
-          <Link to={`/repositories`} className="breadcrumb-link">
-            {repository.repository_name}
-          </Link>
-          <span className="breadcrumb-separator">/</span>
-          <span className="breadcrumb-current">Insights</span>
-        </div>
-
-        <h2>📊 Repository Insights</h2>
-        <p className="insights-subtitle">
-          Detailed statistics and analysis for {repository.repository_name}
-        </p>
-      </div>
-
-      <div className="insights-grid">
-        <div className="insight-card primary-card">
-          <div className="card-icon">📦</div>
+          <div className="insights-grid">
+            <div className="insight-card primary-card">
+              <div className="card-icon">📦</div>
           <div className="card-content">
             <h3>Repository</h3>
             <p className="card-title">{repository.repository_name}</p>

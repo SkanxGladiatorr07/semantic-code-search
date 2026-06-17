@@ -5,6 +5,8 @@
 
 import { useState } from 'react';
 import { createRepository, updateRepository } from '../../services/api';
+import { useToast } from '../../hooks/useToast';
+import ToastContainer from '../common/ToastContainer';
 
 const RepositoryForm = ({ repository = null, onSuccess, onCancel }) => {
   const [formData, setFormData] = useState({
@@ -15,7 +17,7 @@ const RepositoryForm = ({ repository = null, onSuccess, onCancel }) => {
   
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
-  const [successMessage, setSuccessMessage] = useState('');
+  const { toasts, removeToast, success: successToast, error: errorToast } = useToast();
 
   // Form validation
   const validateForm = () => {
@@ -75,7 +77,6 @@ const RepositoryForm = ({ repository = null, onSuccess, onCancel }) => {
     
     setLoading(true);
     setErrors({});
-    setSuccessMessage('');
     
     try {
       let result;
@@ -86,15 +87,12 @@ const RepositoryForm = ({ repository = null, onSuccess, onCancel }) => {
       };
       
       if (repository) {
-        // Update existing repository
         result = await updateRepository(repository.id, repositoryData);
-        setSuccessMessage('Repository updated successfully!');
+        successToast('Repository updated successfully!');
       } else {
-        // Create new repository
         result = await createRepository(repositoryData);
-        setSuccessMessage('Repository created successfully!');
+        successToast('Repository created successfully!');
         
-        // Clear form for new entry
         setFormData({
           repository_name: '',
           github_url: '',
@@ -102,20 +100,19 @@ const RepositoryForm = ({ repository = null, onSuccess, onCancel }) => {
         });
       }
       
-      // Call success callback if provided
       if (onSuccess) {
-        onSuccess(result.data);
+        setTimeout(() => onSuccess(result.data), 500);
       }
       
     } catch (error) {
       console.error('Error saving repository:', error);
       
-      // Handle specific error messages
       if (error.message.includes('already exists')) {
         setErrors({ github_url: error.message });
       } else if (error.message.includes('Invalid GitHub URL')) {
         setErrors({ github_url: error.message });
       } else {
+        errorToast(error.message || 'Failed to save repository');
         setErrors({ form: error.message || 'Failed to save repository. Please try again.' });
       }
     } finally {
@@ -132,6 +129,7 @@ const RepositoryForm = ({ repository = null, onSuccess, onCancel }) => {
 
   return (
     <div className="repository-form-container">
+      <ToastContainer toasts={toasts} removeToast={removeToast} />
       <form onSubmit={handleSubmit} className="repository-form">
         <h2 className="form-title">
           {repository ? 'Edit Repository' : 'Add New Repository'}
@@ -141,13 +139,6 @@ const RepositoryForm = ({ repository = null, onSuccess, onCancel }) => {
         {errors.form && (
           <div className="error-message form-error">
             <p>❌ {errors.form}</p>
-          </div>
-        )}
-        
-        {/* Success message */}
-        {successMessage && (
-          <div className="success-message">
-            <p>✅ {successMessage}</p>
           </div>
         )}
         
@@ -415,8 +406,6 @@ const RepositoryForm = ({ repository = null, onSuccess, onCancel }) => {
           color: var(--success-color);
           border: 1px solid #a7f3d0;
         }
-        
-        .form-help {
           margin-top: var(--spacing-lg);
           padding: var(--spacing-md);
           background: var(--bg-secondary);

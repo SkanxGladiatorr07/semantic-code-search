@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getRepositoryById, chatWithRepository } from '../services/api';
+import LoadingOverlay from '../components/common/LoadingOverlay';
 
 const RepositoryChat = () => {
   const { id } = useParams();
@@ -126,6 +127,7 @@ const RepositoryChat = () => {
 
   return (
     <div className="repository-chat-container">
+      {loading && <LoadingOverlay message="Getting AI response..." submessage="This may take a few moments" />}
       <div className="chat-header">
         <div className="breadcrumb">
           <Link to="/repositories" className="breadcrumb-link">Repositories</Link>
@@ -186,21 +188,7 @@ const RepositoryChat = () => {
           </div>
         ))}
 
-        {loading && (
-          <div className="message message-assistant">
-            <div className="message-avatar">🤖</div>
-            <div className="message-content">
-              <div className="message-header">
-                <span className="message-sender">AI Assistant</span>
-              </div>
-              <div className="message-text typing-indicator">
-                <span></span>
-                <span></span>
-                <span></span>
-              </div>
-            </div>
-          </div>
-        )}
+
 
         <div ref={messagesEndRef} />
       </div>

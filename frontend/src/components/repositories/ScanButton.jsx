@@ -6,23 +6,27 @@
 import { useState } from 'react';
 import { scanRepository } from '../../services/api';
 
-const ScanButton = ({ repository, onScanComplete }) => {
+const ScanButton = ({ repository, onScanComplete, showToast }) => {
   const [scanning, setScanning] = useState(false);
-  const [error, setError] = useState(null);
 
   const handleScan = async () => {
     setScanning(true);
-    setError(null);
 
     try {
       const result = await scanRepository(repository.id);
+      
+      if (showToast) {
+        showToast('Repository scanned successfully!', 'success');
+      }
       
       if (onScanComplete) {
         onScanComplete(result.data);
       }
     } catch (err) {
       console.error('Error scanning repository:', err);
-      setError(err.message || 'Failed to scan repository');
+      if (showToast) {
+        showToast(err.message || 'Failed to scan repository', 'error');
+      }
     } finally {
       setScanning(false);
     }
@@ -85,14 +89,6 @@ const ScanButton = ({ repository, onScanComplete }) => {
           {getScanStatusText()}
         </span>
       </div>
-
-      {error && (
-        <div className="scan-error">
-          <span style={{ color: 'red', fontSize: '0.875rem' }}>
-            ❌ {error}
-          </span>
-        </div>
-      )}
 
       <style jsx>{`
         .scan-button-container {
