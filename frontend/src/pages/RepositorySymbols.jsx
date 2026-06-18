@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { getRepositorySymbols, getRepositoryById } from '../services/api';
+import '../styles/RepositorySymbols.css';
 
 const RepositorySymbols = () => {
   const { id } = useParams();
@@ -30,6 +31,10 @@ const RepositorySymbols = () => {
         getRepositoryById(id)
       ]);
       
+      console.log('Symbols response:', symbolsResponse);
+      console.log('Symbols data:', symbolsResponse.data);
+      console.log('First symbol:', symbolsResponse.data.symbols[0]);
+      
       setData(symbolsResponse.data);
       setRepository(repoResponse.data);
     } catch (err) {
@@ -46,12 +51,12 @@ const RepositorySymbols = () => {
     let filtered = data.symbols;
 
     if (filterType) {
-      filtered = filtered.filter(symbol => symbol.symbol_type === filterType);
+      filtered = filtered.filter(symbol => (symbol.type || symbol.symbol_type) === filterType);
     }
 
     if (searchQuery) {
       filtered = filtered.filter(symbol => 
-        symbol.symbol_name.toLowerCase().includes(searchQuery.toLowerCase())
+        (symbol.name || symbol.symbol_name || '').toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
@@ -198,22 +203,22 @@ const RepositorySymbols = () => {
                 </div>
               ) : (
                 <div className="symbols-by-file">
-                  {groupedByFile.map((fileGroup) => (
-                    <div key={fileGroup.file_path} className="file-group">
+                  {groupedByFile.map((fileGroup, fileIndex) => (
+                    <div key={`${fileGroup.file_path}-${fileIndex}`} className="file-group">
                       <h3 className="file-header">
                         📄 {fileGroup.file_name}
                         <span className="symbol-count">({fileGroup.symbols.length} symbols)</span>
                       </h3>
                       <div className="symbols-grid">
-                        {fileGroup.symbols.map((symbol) => (
-                          <div key={symbol.id} className="symbol-card">
-                            <div className="symbol-type-badge" data-type={symbol.symbol_type}>
-                              {symbol.symbol_type === 'function' && '⚡'}
-                              {symbol.symbol_type === 'class' && '📦'}
-                              {symbol.symbol_type === 'interface' && '🔷'}
-                              {symbol.symbol_type}
+                        {fileGroup.symbols.map((symbol, symbolIndex) => (
+                          <div key={`${symbol.id}-${symbol.symbol_name}-${symbolIndex}`} className="symbol-card" style={{background: '#f9fafb', padding: '16px', border: '1px solid #e5e7eb', borderRadius: '8px', minHeight: '80px'}}>
+                            <div className="symbol-type-badge" data-type={symbol.type || symbol.symbol_type} style={{display: 'inline-flex', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 600, marginBottom: '8px', background: (symbol.type || symbol.symbol_type) === 'function' ? '#dbeafe' : '#d1fae5', color: (symbol.type || symbol.symbol_type) === 'function' ? '#1e40af' : '#065f46'}}>
+                              {(symbol.type || symbol.symbol_type) === 'function' && '⚡'}
+                              {(symbol.type || symbol.symbol_type) === 'class' && '📦'}
+                              {(symbol.type || symbol.symbol_type) === 'interface' && '🔷'}
+                              {symbol.type || symbol.symbol_type}
                             </div>
-                            <div className="symbol-name">{symbol.symbol_name}</div>
+                            <div className="symbol-name" style={{fontFamily: 'monospace', fontSize: '0.9375rem', color: '#111827', fontWeight: 600}}>{symbol.name || symbol.symbol_name}</div>
                           </div>
                         ))}
                       </div>
@@ -231,229 +236,6 @@ const RepositorySymbols = () => {
           </>
         )}
       </div>
-
-      <style jsx>{`
-        .symbols-page {
-          min-height: 100vh;
-          background: var(--bg-secondary);
-        }
-
-        .page-header {
-          background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-          color: white;
-          padding: var(--spacing-2xl) var(--spacing-lg);
-        }
-
-        .header-content {
-          max-width: 1400px;
-          margin: 0 auto;
-        }
-
-        .back-link {
-          display: inline-block;
-          color: white;
-          text-decoration: none;
-          margin-bottom: var(--spacing-md);
-          opacity: 0.9;
-        }
-
-        .back-link:hover {
-          opacity: 1;
-          text-decoration: underline;
-        }
-
-        .page-header h1 {
-          font-size: 2rem;
-          margin-bottom: var(--spacing-sm);
-          color: white;
-        }
-
-        .repo-url a {
-          color: white;
-          opacity: 0.9;
-        }
-
-        .page-content {
-          max-width: 1400px;
-          margin: 0 auto;
-          padding: var(--spacing-xl) var(--spacing-lg);
-        }
-
-        .loading-container,
-        .error-container,
-        .no-symbols {
-          text-align: center;
-          padding: var(--spacing-2xl);
-          background: white;
-          border-radius: var(--radius-lg);
-          box-shadow: var(--shadow-md);
-        }
-
-        .spinner {
-          width: 48px;
-          height: 48px;
-          border: 4px solid rgba(59, 130, 246, 0.3);
-          border-radius: 50%;
-          border-top-color: var(--primary-color);
-          animation: spin 1s linear infinite;
-          margin: 0 auto var(--spacing-lg);
-        }
-
-        .symbols-header {
-          margin-bottom: var(--spacing-xl);
-        }
-
-        .symbols-stats {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: var(--spacing-lg);
-          margin-bottom: var(--spacing-lg);
-        }
-
-        .stat-card {
-          background: white;
-          padding: var(--spacing-lg);
-          border-radius: var(--radius-lg);
-          box-shadow: var(--shadow-md);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-        }
-
-        .stat-label {
-          font-size: 0.875rem;
-          color: var(--text-secondary);
-          margin-bottom: var(--spacing-xs);
-        }
-
-        .stat-value {
-          font-size: 2rem;
-          font-weight: 700;
-          color: var(--primary-color);
-        }
-
-        .symbols-controls {
-          display: flex;
-          gap: var(--spacing-md);
-          flex-wrap: wrap;
-        }
-
-        .search-input,
-        .filter-select {
-          flex: 1;
-          min-width: 200px;
-          padding: var(--spacing-md);
-          border: 1px solid var(--border-color);
-          border-radius: var(--radius-md);
-          font-size: 1rem;
-        }
-
-        .symbols-by-file {
-          display: flex;
-          flex-direction: column;
-          gap: var(--spacing-xl);
-        }
-
-        .file-group {
-          background: white;
-          border-radius: var(--radius-lg);
-          box-shadow: var(--shadow-md);
-          padding: var(--spacing-lg);
-        }
-
-        .file-header {
-          font-size: 1.25rem;
-          margin-bottom: var(--spacing-lg);
-          padding-bottom: var(--spacing-md);
-          border-bottom: 2px solid var(--border-color);
-          display: flex;
-          align-items: center;
-          gap: var(--spacing-sm);
-        }
-
-        .symbol-count {
-          font-size: 0.875rem;
-          color: var(--text-secondary);
-          font-weight: normal;
-        }
-
-        .symbols-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-          gap: var(--spacing-md);
-        }
-
-        .symbol-card {
-          background: var(--bg-secondary);
-          padding: var(--spacing-md);
-          border-radius: var(--radius-md);
-          border: 1px solid var(--border-color);
-          transition: all var(--transition-fast);
-        }
-
-        .symbol-card:hover {
-          transform: translateY(-2px);
-          box-shadow: var(--shadow-sm);
-        }
-
-        .symbol-type-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 4px;
-          padding: 4px 8px;
-          border-radius: var(--radius-sm);
-          font-size: 0.75rem;
-          font-weight: 600;
-          text-transform: capitalize;
-          margin-bottom: var(--spacing-sm);
-        }
-
-        .symbol-type-badge[data-type="function"] {
-          background: #dbeafe;
-          color: #1e40af;
-        }
-
-        .symbol-type-badge[data-type="class"] {
-          background: #d1fae5;
-          color: #065f46;
-        }
-
-        .symbol-type-badge[data-type="interface"] {
-          background: #fef3c7;
-          color: #92400e;
-        }
-
-        .symbol-name {
-          font-family: monospace;
-          font-size: 0.875rem;
-          color: var(--text-primary);
-          font-weight: 500;
-        }
-
-        .no-results {
-          padding: var(--spacing-2xl);
-          text-align: center;
-          color: var(--text-secondary);
-        }
-
-        .symbols-footer {
-          margin-top: var(--spacing-xl);
-          padding-top: var(--spacing-lg);
-          border-top: 1px solid var(--border-color);
-          color: var(--text-secondary);
-          text-align: center;
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-
-        @media (max-width: 768px) {
-          .symbols-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
     </div>
   );
 };

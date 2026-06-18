@@ -75,9 +75,14 @@ export const analyzeRepository = async (req, res) => {
     await SymbolModel.deleteByRepositoryId(repositoryId);
 
     const repositoryPath = gitCloner.getRepositoryPath(repository.id);
+    console.log('Repository path:', repositoryPath);
+    console.log('Files to parse:', files.length);
+    
     const parsedFiles = await codeParser.parseFiles(files, repositoryPath);
+    console.log('Parsed files:', parsedFiles.length);
     
     const symbols = symbolExtractor.extractSymbols(parsedFiles);
+    console.log('Extracted symbols:', symbols.length);
 
     if (symbols.length === 0) {
       return res.status(200).json({
@@ -104,7 +109,11 @@ export const analyzeRepository = async (req, res) => {
     });
 
     if (symbolsToSave.length > 0) {
+      console.log('Saving symbols to database:', symbolsToSave.length);
       await SymbolModel.createBatch(repositoryId, symbolsToSave);
+      console.log('Symbols saved successfully');
+    } else {
+      console.log('No symbols to save after file matching');
     }
 
     const statistics = await SymbolModel.getStatistics(repositoryId);
