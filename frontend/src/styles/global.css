@@ -48,6 +48,26 @@
   --transition-slow: 0.5s ease;
 }
 
+[data-theme="dark"] {
+  /* Text Colors */
+  --text-primary: #f9fafb;
+  --text-secondary: #9ca3af;
+  --text-light: #6b7280;
+  
+  /* Background Colors */
+  --bg-primary: #1f2937;
+  --bg-secondary: #111827;
+  --bg-tertiary: #374151;
+  
+  /* Border */
+  --border-color: #374151;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -101,10 +121,13 @@ body {
 .btn-secondary {
   background: var(--secondary-color);
   color: white;
+  border: 2px solid transparent;
 }
 
 .btn-secondary:hover:not(:disabled) {
   background: var(--secondary-dark);
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
 }
 
 .btn-success {
@@ -125,15 +148,21 @@ body {
   background: var(--error-dark);
 }
 
+.btn-outline,
 .btn-outline-primary {
-  background: transparent;
-  border: 2px solid var(--primary-color);
-  color: var(--primary-color);
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  color: white;
 }
 
+.btn-outline:hover:not(:disabled),
 .btn-outline-primary:hover:not(:disabled) {
-  background: var(--primary-color);
+  background: rgba(255, 255, 255, 0.3);
+  border-color: white;
   color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
 .btn-outline-secondary {

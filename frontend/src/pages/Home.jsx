@@ -39,7 +39,7 @@ const Home = () => {
               <Link to="/dashboard" className="btn btn-primary btn-lg">
                 🚀 Get Started
               </Link>
-              <Link to="/repositories" className="btn btn-outline btn-lg">
+              <Link to="/repositories" className="btn btn-secondary btn-lg">
                 📚 View Repositories
               </Link>
             </div>

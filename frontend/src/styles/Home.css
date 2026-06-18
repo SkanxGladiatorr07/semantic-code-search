@@ -9,6 +9,11 @@
   padding: var(--spacing-2xl) 0;
   position: relative;
   overflow: hidden;
+  transition: background var(--transition-medium);
+}
+
+[data-theme="dark"] .hero-section {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
 }
 
 .hero-section::before {
