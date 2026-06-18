@@ -28,7 +28,7 @@ class ContextService {
 
       const relevantFiles = this.findRelevantFiles(question, symbols, files);
       
-      const topFiles = relevantFiles.slice(0, 3);
+      const topFiles = relevantFiles.slice(0, 2); // Reduced from 3 to 2 files
       
       const fileContents = await this.readFileContents(
         repository.id,
@@ -38,7 +38,7 @@ class ContextService {
       const relevantSymbols = topFiles
         .map(f => f.symbols)
         .flat()
-        .slice(0, 50);
+        .slice(0, 20); // Reduced from 50 to 20
 
       return {
         repository: {
@@ -145,8 +145,8 @@ class ContextService {
   async readFileContents(repositoryId, relevantFiles) {
     const repositoryPath = gitCloner.getRepositoryPath(repositoryId);
     const fileContents = [];
-    const MAX_FILE_SIZE = 2000;
-    const MAX_TOTAL_CONTEXT = 8000;
+    const MAX_FILE_SIZE = 800; // Reduced from 2000
+    const MAX_TOTAL_CONTEXT = 2500; // Reduced from 8000
     let totalChars = 0;
 
     for (const fileData of relevantFiles) {
