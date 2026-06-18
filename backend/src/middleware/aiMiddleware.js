@@ -3,14 +3,14 @@
  * Validates AI-related requests
  */
 
-import geminiService from '../services/geminiService.js';
+import aiService from '../services/aiService.js';
 
 /**
  * Check if AI service is available
  */
 export const checkAIAvailability = (req, res, next) => {
   try {
-    if (!geminiService.isAvailable()) {
+    if (!aiService.isAvailable()) {
       return res.status(503).json({
         success: false,
         message: 'AI service is not available. Please check configuration.'
