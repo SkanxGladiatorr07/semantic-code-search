@@ -20,8 +20,11 @@ class GeminiService {
     if (this.initialized) return;
 
     if (!this.apiKey) {
+      console.error('GEMINI_API_KEY is missing from environment variables');
       throw new Error('GEMINI_API_KEY is not configured');
     }
+
+    console.log('Initializing Gemini with API key:', this.apiKey.substring(0, 10) + '...');
 
     try {
       this.genAI = new GoogleGenerativeAI(this.apiKey);
@@ -30,7 +33,8 @@ class GeminiService {
       console.log('Gemini service initialized successfully');
     } catch (error) {
       console.error('Failed to initialize Gemini service:', error);
-      throw new Error('Failed to initialize Gemini service');
+      console.error('Error message:', error.message);
+      throw new Error(`Failed to initialize Gemini service: ${error.message}`);
     }
   }
 
@@ -58,8 +62,12 @@ class GeminiService {
 
       return text;
     } catch (error) {
-      console.error('Error generating text:', error);
-      throw new Error('Failed to generate text from Gemini');
+      console.error('Error generating text from Gemini:', error);
+      console.error('Error details:', error.message);
+      if (error.response) {
+        console.error('API Response:', error.response);
+      }
+      throw new Error(`Failed to generate text from Gemini: ${error.message || error}`);
     }
   }
 
