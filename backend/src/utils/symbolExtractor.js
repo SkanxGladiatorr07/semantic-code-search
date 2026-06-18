@@ -1,17 +1,12 @@
-/**
- * Symbol Extractor Utility
- * Extracts functions and classes from parsed code
- */
+import env from '../config/env.js';
 
 class SymbolExtractor {
-  /**
-   * Extract symbols from parsed files
-   * @param {Array} parsedFiles - Array of parsed file objects
-   * @returns {Array}
-   */
+  constructor() {
+    this.maxSymbols = env.limits.maxSymbols;
+  }
+
   extractSymbols(parsedFiles) {
     const symbols = [];
-    const MAX_SYMBOLS = 100000;
 
     if (!Array.isArray(parsedFiles)) {
       console.error('extractSymbols: parsedFiles is not an array');
@@ -19,7 +14,7 @@ class SymbolExtractor {
     }
 
     parsedFiles.forEach(file => {
-      if (symbols.length >= MAX_SYMBOLS) {
+      if (symbols.length >= this.maxSymbols) {
         return;
       }
 
@@ -40,7 +35,7 @@ class SymbolExtractor {
 
         if (parsed.functions && Array.isArray(parsed.functions)) {
           parsed.functions.forEach(funcName => {
-            if (funcName && typeof funcName === 'string' && symbols.length < MAX_SYMBOLS) {
+            if (funcName && typeof funcName === 'string' && symbols.length < this.maxSymbols) {
               symbols.push({
                 name: funcName,
                 type: 'function',
@@ -54,7 +49,7 @@ class SymbolExtractor {
 
         if (parsed.methods && Array.isArray(parsed.methods)) {
           parsed.methods.forEach(methodName => {
-            if (methodName && typeof methodName === 'string' && symbols.length < MAX_SYMBOLS) {
+            if (methodName && typeof methodName === 'string' && symbols.length < this.maxSymbols) {
               symbols.push({
                 name: methodName,
                 type: 'function',
@@ -68,7 +63,7 @@ class SymbolExtractor {
 
         if (parsed.classes && Array.isArray(parsed.classes)) {
           parsed.classes.forEach(className => {
-            if (className && typeof className === 'string' && symbols.length < MAX_SYMBOLS) {
+            if (className && typeof className === 'string' && symbols.length < this.maxSymbols) {
               symbols.push({
                 name: className,
                 type: 'class',
@@ -82,7 +77,7 @@ class SymbolExtractor {
 
         if (parsed.interfaces && Array.isArray(parsed.interfaces)) {
           parsed.interfaces.forEach(interfaceName => {
-            if (interfaceName && typeof interfaceName === 'string' && symbols.length < MAX_SYMBOLS) {
+            if (interfaceName && typeof interfaceName === 'string' && symbols.length < this.maxSymbols) {
               symbols.push({
                 name: interfaceName,
                 type: 'interface',
@@ -98,8 +93,8 @@ class SymbolExtractor {
       }
     });
 
-    if (symbols.length >= MAX_SYMBOLS) {
-      console.warn(`Symbol limit reached: ${MAX_SYMBOLS}`);
+    if (symbols.length >= this.maxSymbols) {
+      console.warn(`Symbol limit reached: ${this.maxSymbols}`);
     }
 
     return symbols;

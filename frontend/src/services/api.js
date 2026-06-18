@@ -5,33 +5,22 @@
 
 import axios from 'axios';
 
-// Get base URL from environment variables
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const REQUEST_TIMEOUT = parseInt(import.meta.env.VITE_API_TIMEOUT || '30000', 10);
 
-/**
- * Create and configure Axios instance
- */
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000, // 10 second timeout
+  timeout: REQUEST_TIMEOUT,
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
-/**
- * Request interceptor
- * Add authentication tokens or modify requests before sending
- */
 apiClient.interceptors.request.use(
   (config) => {
-    // Future: Add authentication token here
-    // const token = localStorage.getItem('token');
-    // if (token) {
-    //   config.headers.Authorization = `Bearer ${token}`;
-    // }
-    
-    console.log(`API Request: ${config.method.toUpperCase()} ${config.url}`);
+    if (import.meta.env.DEV) {
+      console.log(`API Request: ${config.method.toUpperCase()} ${config.url}`);
+    }
     return config;
   },
   (error) => {
@@ -40,13 +29,11 @@ apiClient.interceptors.request.use(
   }
 );
 
-/**
- * Response interceptor
- * Handle responses and errors globally
- */
 apiClient.interceptors.response.use(
   (response) => {
-    console.log(`API Response: ${response.status} ${response.config.url}`);
+    if (import.meta.env.DEV) {
+      console.log(`API Response: ${response.status} ${response.config.url}`);
+    }
     return response;
   },
   (error) => {

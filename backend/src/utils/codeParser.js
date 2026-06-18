@@ -5,6 +5,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import env from '../config/env.js';
 
 class CodeParser {
   constructor() {
@@ -16,6 +17,9 @@ class CodeParser {
       '.java',
       '.py'
     ]);
+    
+    this.maxFileSize = 5 * 1024 * 1024;
+    this.maxFilesToParse = env.limits.maxFilesToParse;
   }
 
   /**
@@ -46,7 +50,7 @@ class CodeParser {
         return null;
       }
 
-      if (stats.size > 5 * 1024 * 1024) {
+      if (stats.size > this.maxFileSize) {
         console.warn(`Skipping large file: ${filePath} (${stats.size} bytes)`);
         return null;
       }
@@ -288,12 +292,11 @@ class CodeParser {
    */
   async parseFiles(files, basePath) {
     const results = [];
-    const MAX_FILES_TO_PARSE = 10000;
 
-    const filesToParse = files.slice(0, MAX_FILES_TO_PARSE);
+    const filesToParse = files.slice(0, this.maxFilesToParse);
     
-    if (files.length > MAX_FILES_TO_PARSE) {
-      console.warn(`Limiting parse to ${MAX_FILES_TO_PARSE} files (total: ${files.length})`);
+    if (files.length > this.maxFilesToParse) {
+      console.warn(`Limiting parse to ${this.maxFilesToParse} files (total: ${files.length})`);
     }
 
     for (const file of filesToParse) {

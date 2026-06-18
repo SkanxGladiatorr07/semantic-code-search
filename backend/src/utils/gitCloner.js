@@ -7,12 +7,13 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs/promises';
+import env from '../config/env.js';
 
 const execPromise = promisify(exec);
 
 class GitCloner {
   constructor() {
-    this.cloneDir = path.join(process.cwd(), 'cloned_repos');
+    this.cloneDir = path.join(process.cwd(), env.clone.directory);
   }
 
   /**
@@ -54,12 +55,11 @@ class GitCloner {
     }
 
     try {
-      const timeout = 300000; // 5 minutes
       const { stdout, stderr } = await execPromise(
         `git clone --depth 1 --single-branch "${githubUrl}" "${localPath}"`,
         { 
-          maxBuffer: 1024 * 1024 * 50, // 50MB buffer
-          timeout
+          maxBuffer: 1024 * 1024 * 50,
+          timeout: env.clone.timeout
         }
       );
 

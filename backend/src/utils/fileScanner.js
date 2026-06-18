@@ -5,6 +5,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import env from '../config/env.js';
 
 class FileScanner {
   constructor() {
@@ -35,6 +36,10 @@ class FileScanner {
       'yarn.lock',
       'pnpm-lock.yaml'
     ]);
+    
+    this.maxDepth = env.limits.maxDepth;
+    this.maxFiles = env.limits.maxFiles;
+    this.maxFileSize = env.limits.maxFileSize;
   }
 
   /**
@@ -44,12 +49,10 @@ class FileScanner {
    * @returns {Promise<Array>}
    */
   async scanDirectory(dirPath, basePath = dirPath, depth = 0) {
-    const MAX_DEPTH = 20;
-    const MAX_FILES = 50000;
     const files = [];
 
-    if (depth > MAX_DEPTH) {
-      console.warn(`Max depth ${MAX_DEPTH} reached at ${dirPath}`);
+    if (depth > this.maxDepth) {
+      console.warn(`Max depth ${this.maxDepth} reached at ${dirPath}`);
       return files;
     }
 
@@ -57,8 +60,8 @@ class FileScanner {
       const entries = await fs.readdir(dirPath, { withFileTypes: true });
 
       for (const entry of entries) {
-        if (files.length >= MAX_FILES) {
-          console.warn(`Max files limit ${MAX_FILES} reached`);
+        if (files.length >= this.maxFiles) {
+          console.warn(`Max files limit ${this.maxFiles} reached`);
           break;
         }
 
@@ -84,7 +87,7 @@ class FileScanner {
           try {
             const stats = await fs.stat(fullPath);
             
-            if (stats.size > 10 * 1024 * 1024) {
+            if (stats.size > this.maxFileSize) {
               console.warn(`Skipping large file: ${relativePath} (${stats.size} bytes)`);
               continue;
             }
