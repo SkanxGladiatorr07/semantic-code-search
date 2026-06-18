@@ -322,7 +322,7 @@ Return a JSON array of indices (numbers) ordered by relevance, most relevant fir
     try {
       this.ensureInitialized();
 
-      const { repository, relevantSymbols, relevantFiles, totalSymbols, totalFiles } = context;
+      const { repository, relevantSymbols, relevantFiles, totalSymbols, totalFiles, isOverviewQuestion } = context;
 
       let prompt = `You are an expert code assistant analyzing a repository.
 
@@ -334,6 +334,16 @@ Total Files: ${totalFiles}
 Total Symbols: ${totalSymbols}
 
 `;
+
+      // For overview questions, emphasize documentation files
+      if (isOverviewQuestion) {
+        prompt += `NOTE: This is a high-level overview question. Focus on:\n`;
+        prompt += `1. The main purpose and goals of this project\n`;
+        prompt += `2. Key technologies and frameworks used\n`;
+        prompt += `3. Main features and functionality\n`;
+        prompt += `4. Project architecture and structure\n`;
+        prompt += `5. Entry points and important files\n\n`;
+      }
 
       if (relevantSymbols.length > 0) {
         const symbolsByType = {
@@ -412,7 +422,21 @@ Total Symbols: ${totalSymbols}
 
       prompt += `\n${'='.repeat(80)}\nUSER QUESTION:\n${question}\n${'='.repeat(80)}\n`;
 
-      prompt += `\nINSTRUCTIONS:
+      if (isOverviewQuestion) {
+        prompt += `\nINSTRUCTIONS FOR OVERVIEW QUESTIONS:
+1. Start with a clear, concise summary of what this project does (2-3 sentences)
+2. Identify the main technologies, frameworks, and programming languages used
+3. Describe the key features and functionality
+4. Explain the project structure and architecture
+5. Mention important entry points (like package.json, README, main files)
+6. Use information from README files, package.json, and main code files
+7. Be comprehensive but clear - this is a high-level overview
+8. Format your response with clear sections and bullet points
+9. Reference specific files when discussing features or architecture
+
+ANSWER:`;
+      } else {
+        prompt += `\nINSTRUCTIONS:
 1. Analyze the provided code files and symbols carefully
 2. Answer the question directly and concisely
 3. Reference specific files, functions, or classes when relevant
@@ -423,6 +447,7 @@ Total Symbols: ${totalSymbols}
 8. If multiple files are relevant, explain how they relate to each other
 
 ANSWER:`;
+      }
 
       return await this.generateText(prompt);
     } catch (error) {

@@ -28,17 +28,23 @@ class ContextService {
 
       const relevantFiles = this.findRelevantFiles(question, symbols, files);
       
-      const topFiles = relevantFiles.slice(0, 2); // Reduced from 3 to 2 files
+      // Increase to 3 files for overview questions
+      const questionLower = question.toLowerCase();
+      const isOverview = this.isOverviewQuestion(questionLower);
+      const numFiles = isOverview ? 3 : 2;
+      
+      const topFiles = relevantFiles.slice(0, numFiles);
       
       const fileContents = await this.readFileContents(
         repository.id,
-        topFiles
+        topFiles,
+        isOverview
       );
 
       const relevantSymbols = topFiles
         .map(f => f.symbols)
         .flat()
-        .slice(0, 20); // Reduced from 50 to 20
+        .slice(0, 20);
 
       return {
         repository: {
@@ -49,7 +55,8 @@ class ContextService {
         relevantSymbols,
         relevantFiles: fileContents,
         totalSymbols: symbols.length,
-        totalFiles: files.length
+        totalFiles: files.length,
+        isOverviewQuestion: isOverview
       };
     } catch (error) {
       console.error('Error getting relevant context:', error);
@@ -67,6 +74,14 @@ class ContextService {
   findRelevantFiles(question, symbols, files) {
     const questionLower = question.toLowerCase();
     const keywords = this.extractKeywords(questionLower);
+
+    // Check if this is a high-level overview question
+    const isOverviewQuestion = this.isOverviewQuestion(questionLower);
+
+    if (isOverviewQuestion) {
+      // Prioritize documentation and config files for overview questions
+      return this.getOverviewFiles(files, symbols);
+    }
 
     const fileScores = new Map();
 
@@ -101,19 +116,100 @@ class ContextService {
     });
 
     if (fileScores.size === 0) {
-      const topFiles = files.slice(0, 3).map(f => ({
-        file_id: f.id,
-        file_name: f.file_name,
-        file_path: f.file_path,
-        file_extension: f.file_extension,
-        score: 0,
-        symbols: []
-      }));
-      return topFiles;
+      // If no matches, return most important files
+      return this.getOverviewFiles(files, symbols);
     }
 
     return Array.from(fileScores.values())
       .sort((a, b) => b.score - a.score);
+  }
+
+  /**
+   * Check if question is asking for project overview
+   * @param {string} question - Question in lowercase
+   * @returns {boolean}
+   */
+  isOverviewQuestion(question) {
+    const overviewPatterns = [
+      'what is', 'what does', 'what\'s', 'whats',
+      'project about', 'repository about', 'repo about',
+      'project do', 'repository do', 'repo do',
+      'overview', 'summary', 'describe', 'explain project',
+      'explain repository', 'explain repo', 'purpose',
+      'main functionality', 'main features', 'what are the features'
+    ];
+
+    return overviewPatterns.some(pattern => question.includes(pattern));
+  }
+
+  /**
+   * Get files that provide project overview
+   * @param {Array} files - All files
+   * @param {Array} symbols - All symbols
+   * @returns {Array} Overview files with symbols
+   */
+  getOverviewFiles(files, symbols) {
+    // Priority order for overview files
+    const priorityFiles = [
+      'readme.md', 'readme.txt', 'readme',
+      'package.json', 'composer.json', 'cargo.toml', 'pom.xml',
+      'index.js', 'index.ts', 'main.js', 'main.ts', 'main.py',
+      'app.js', 'app.ts', 'server.js', 'server.ts',
+      'config.js', 'config.ts', 'configuration.js'
+    ];
+
+    const selectedFiles = [];
+    const fileMap = new Map();
+
+    // First, try to find priority files
+    files.forEach(file => {
+      const fileNameLower = file.file_name.toLowerCase();
+      const priority = priorityFiles.findIndex(p => fileNameLower.includes(p));
+      
+      if (priority !== -1) {
+        fileMap.set(file.id, {
+          file_id: file.id,
+          file_name: file.file_name,
+          file_path: file.file_path,
+          file_extension: file.file_extension,
+          score: 100 - priority, // Higher priority = higher score
+          symbols: []
+        });
+      }
+    });
+
+    // Add symbols to selected files
+    symbols.forEach(symbol => {
+      if (fileMap.has(symbol.file_id)) {
+        fileMap.get(symbol.file_id).symbols.push(symbol);
+      }
+    });
+
+    // Convert to array and sort by priority
+    const priorityFilesArray = Array.from(fileMap.values())
+      .sort((a, b) => b.score - a.score);
+
+    // Take top 3 priority files
+    selectedFiles.push(...priorityFilesArray.slice(0, 3));
+
+    // If we don't have 3 files yet, add entry point files
+    if (selectedFiles.length < 3) {
+      const entryFiles = files
+        .filter(f => !fileMap.has(f.id))
+        .map(f => ({
+          file_id: f.id,
+          file_name: f.file_name,
+          file_path: f.file_path,
+          file_extension: f.file_extension,
+          score: 0,
+          symbols: symbols.filter(s => s.file_id === f.id)
+        }))
+        .slice(0, 3 - selectedFiles.length);
+
+      selectedFiles.push(...entryFiles);
+    }
+
+    return selectedFiles;
   }
 
   /**
@@ -140,13 +236,16 @@ class ContextService {
    * Read contents of relevant files
    * @param {number} repositoryId - Repository ID
    * @param {Array} relevantFiles - Files to read
+   * @param {boolean} isOverview - Is this an overview question
    * @returns {Promise<Array>} File contents
    */
-  async readFileContents(repositoryId, relevantFiles) {
+  async readFileContents(repositoryId, relevantFiles, isOverview = false) {
     const repositoryPath = gitCloner.getRepositoryPath(repositoryId);
     const fileContents = [];
-    const MAX_FILE_SIZE = 800; // Reduced from 2000
-    const MAX_TOTAL_CONTEXT = 2500; // Reduced from 8000
+    
+    // Allow more content for overview questions
+    const MAX_FILE_SIZE = isOverview ? 1500 : 800;
+    const MAX_TOTAL_CONTEXT = isOverview ? 4000 : 2500;
     let totalChars = 0;
 
     for (const fileData of relevantFiles) {
