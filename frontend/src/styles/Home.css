@@ -1,107 +1,159 @@
 .home-page {
-  animation: fadeIn 0.5s ease-in;
+  min-height: calc(100vh - var(--navbar-height));
 }
 
+/* Hero Section */
 .hero-section {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 80px 32px;
-  text-align: center;
-  border-radius: 16px;
-  margin-bottom: 64px;
+  padding: var(--spacing-2xl) 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="rgba(255,255,255,0.1)" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,122.7C672,117,768,139,864,128C960,117,1056,75,1152,69.3C1248,64,1344,96,1392,112L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat bottom;
+  background-size: cover;
+  opacity: 0.3;
+}
+
+.hero-container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+  position: relative;
+  z-index: 1;
 }
 
 .hero-content {
+  text-align: center;
   max-width: 800px;
   margin: 0 auto;
+  padding: var(--spacing-2xl) 0;
 }
 
 .hero-title {
-  font-size: 3rem;
-  font-weight: 800;
-  margin: 0 0 24px 0;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 700;
+  margin-bottom: var(--spacing-lg);
   line-height: 1.2;
+  color: white;
 }
 
 .hero-subtitle {
-  font-size: 1.25rem;
-  margin: 0 0 40px 0;
-  opacity: 0.95;
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  margin-bottom: var(--spacing-2xl);
   line-height: 1.6;
+  color: rgba(255, 255, 255, 0.95);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.cta-buttons {
+.hero-actions {
   display: flex;
-  gap: 16px;
+  gap: var(--spacing-md);
   justify-content: center;
   flex-wrap: wrap;
 }
 
+/* Features Section */
 .features-section {
-  margin-bottom: 64px;
+  padding: var(--spacing-2xl) 0;
+  background: var(--bg-secondary);
 }
 
-.features-title {
+.features-container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+}
+
+.section-title {
+  text-align: center;
   font-size: 2.5rem;
   font-weight: 700;
+  margin-bottom: var(--spacing-md);
+  color: var(--text-primary);
+}
+
+.section-subtitle {
   text-align: center;
-  margin: 0 0 48px 0;
-  color: #111827;
+  font-size: 1.125rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-2xl);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--spacing-xl);
+  margin-top: var(--spacing-2xl);
 }
 
 .feature-card {
-  text-align: center;
-  padding: 32px 24px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-.feature-icon {
-  font-size: 3.5rem;
-  margin-bottom: 20px;
+.feature-card .card-icon {
+  font-size: 3rem;
 }
 
-.feature-card h3 {
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0 0 12px 0;
-  color: #111827;
+.feature-card .card-title {
+  font-size: 1.25rem;
+  margin-bottom: var(--spacing-sm);
 }
 
-.feature-card p {
-  color: #6b7280;
+.feature-description {
+  color: var(--text-secondary);
   line-height: 1.6;
   margin: 0;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
+/* Responsive */
+@media (max-width: 768px) {
+  .hero-content {
+    padding: var(--spacing-xl) 0;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .hero-actions {
+    flex-direction: column;
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+  }
+
+  .hero-actions .btn {
+    width: 100%;
+  }
+
+  .features-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  .section-title {
+    font-size: 2rem;
   }
 }
 
-@media (max-width: 768px) {
-  .hero-title {
-    font-size: 2.25rem;
+@media (max-width: 480px) {
+  .hero-section {
+    padding: var(--spacing-xl) 0;
   }
-  
-  .hero-subtitle {
-    font-size: 1.125rem;
-  }
-  
-  .cta-buttons {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  
-  .features-title {
-    font-size: 2rem;
-  }
-  
-  .feature-icon {
-    font-size: 3rem;
+
+  .section-title {
+    font-size: 1.75rem;
   }
 }

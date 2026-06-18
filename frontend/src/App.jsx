@@ -9,6 +9,7 @@ import RepositorySearch from './pages/RepositorySearch';
 import RepositoryChat from './pages/RepositoryChat';
 import RepositoryInsights from './pages/RepositoryInsights';
 import RepositorySummary from './pages/RepositorySummary';
+import './styles/variables.css';
 import './styles/global.css';
 import './styles/layout.css';
 import './styles/App.css';
