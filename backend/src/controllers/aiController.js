@@ -3,7 +3,7 @@
  * Handles AI-powered code analysis and question answering
  */
 
-import aiService from '../services/aiService.js';
+import groqService from '../services/groqService.js';
 import RepositoryFileModel from '../models/RepositoryFileModel.js';
 import SymbolModel from '../models/SymbolModel.js';
 import codeParser from '../utils/codeParser.js';
@@ -25,7 +25,7 @@ export const analyzeCode = async (req, res) => {
       });
     }
 
-    const analysis = await aiService.analyzeCode(code, language);
+    const analysis = await groqService.analyzeCode(code, language);
 
     res.status(200).json({
       success: true,
@@ -58,7 +58,7 @@ export const explainCode = async (req, res) => {
       });
     }
 
-    const explanation = await aiService.explainCode(code, language);
+    const explanation = await groqService.explainCode(code, language);
 
     res.status(200).json({
       success: true,
@@ -93,7 +93,7 @@ export const answerQuestion = async (req, res) => {
       });
     }
 
-    const answer = await aiService.answerQuestion(question, code, language);
+    const answer = await groqService.answerQuestion(question, code, language);
 
     res.status(200).json({
       success: true,
@@ -129,7 +129,7 @@ export const generateDocumentation = async (req, res) => {
       });
     }
 
-    const documentation = await aiService.generateDocumentation(code, language);
+    const documentation = await groqService.generateDocumentation(code, language);
 
     res.status(200).json({
       success: true,
@@ -164,7 +164,7 @@ export const suggestImprovements = async (req, res) => {
       });
     }
 
-    const suggestions = await aiService.suggestImprovements(code, language);
+    const suggestions = await groqService.suggestImprovements(code, language);
 
     res.status(200).json({
       success: true,
@@ -218,7 +218,7 @@ export const analyzeFile = async (req, res) => {
       });
     }
 
-    const analysis = await aiService.analyzeCode(parsed.content, parsed.language);
+    const analysis = await groqService.analyzeCode(parsed.content, parsed.language);
 
     res.status(200).json({
       success: true,
@@ -276,7 +276,7 @@ export const semanticSearch = async (req, res) => {
       file_path: symbol.file_path
     }));
 
-    const rankedResults = await aiService.semanticSearch(query, codeSnippets);
+    const rankedResults = await groqService.semanticSearch(query, codeSnippets);
 
     res.status(200).json({
       success: true,
@@ -304,14 +304,14 @@ export const semanticSearch = async (req, res) => {
  */
 export const getAIStatus = async (req, res) => {
   try {
-    const isAvailable = aiService.isAvailable();
+    const isAvailable = groqService.isAvailable();
 
     res.status(200).json({
       success: true,
       data: {
         available: isAvailable,
-        service: 'OpenAI',
-        initialized: aiService.initialized
+        service: 'Groq',
+        initialized: groqService.initialized
       }
     });
 

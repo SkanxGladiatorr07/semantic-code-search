@@ -3,14 +3,14 @@
  * Validates AI-related requests
  */
 
-import aiService from '../services/aiService.js';
+import groqService from '../services/groqService.js';
 
 /**
  * Check if AI service is available
  */
 export const checkAIAvailability = (req, res, next) => {
   try {
-    if (!aiService.isAvailable()) {
+    if (!groqService.isAvailable()) {
       return res.status(503).json({
         success: false,
         message: 'AI service is not available. Please check configuration.'

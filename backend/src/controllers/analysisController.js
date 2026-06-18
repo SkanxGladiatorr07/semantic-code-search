@@ -9,7 +9,7 @@ import SymbolModel from '../models/SymbolModel.js';
 import gitCloner from '../utils/gitCloner.js';
 import codeParser from '../utils/codeParser.js';
 import symbolExtractor from '../utils/symbolExtractor.js';
-import aiService from '../services/aiService.js';
+import groqService from '../services/groqService.js';
 import contextService from '../services/contextService.js';
 
 /**
@@ -328,7 +328,7 @@ export const chatWithRepository = async (req, res) => {
       });
     }
 
-    const answer = await aiService.answerRepositoryQuestion(question, context);
+    const answer = await groqService.answerRepositoryQuestion(question, context);
 
     res.status(200).json({
       success: true,
@@ -408,7 +408,7 @@ export const generateRepositorySummary = async (req, res) => {
       'Generate a comprehensive project summary'
     );
 
-    const summary = await aiService.generateRepositorySummary(context);
+    const summary = await groqService.generateRepositorySummary(context);
 
     res.status(200).json({
       success: true,
