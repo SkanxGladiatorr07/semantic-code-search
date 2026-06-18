@@ -43,46 +43,73 @@ class FileScanner {
    * @param {string} basePath - Base path for relative paths
    * @returns {Promise<Array>}
    */
-  async scanDirectory(dirPath, basePath = dirPath) {
+  async scanDirectory(dirPath, basePath = dirPath, depth = 0) {
+    const MAX_DEPTH = 20;
+    const MAX_FILES = 50000;
     const files = [];
+
+    if (depth > MAX_DEPTH) {
+      console.warn(`Max depth ${MAX_DEPTH} reached at ${dirPath}`);
+      return files;
+    }
 
     try {
       const entries = await fs.readdir(dirPath, { withFileTypes: true });
 
       for (const entry of entries) {
+        if (files.length >= MAX_FILES) {
+          console.warn(`Max files limit ${MAX_FILES} reached`);
+          break;
+        }
+
         const fullPath = path.join(dirPath, entry.name);
         const relativePath = path.relative(basePath, fullPath);
 
         if (entry.isDirectory()) {
-          // Skip ignored directories
           if (this.ignoredDirs.has(entry.name)) {
             continue;
           }
 
-          // Recursively scan subdirectory
-          const subFiles = await this.scanDirectory(fullPath, basePath);
+          if (entry.name.startsWith('.') && entry.name !== '.github') {
+            continue;
+          }
+
+          const subFiles = await this.scanDirectory(fullPath, basePath, depth + 1);
           files.push(...subFiles);
         } else if (entry.isFile()) {
-          // Skip ignored files
           if (this.ignoredFiles.has(entry.name)) {
             continue;
           }
 
-          // Get file stats
-          const stats = await fs.stat(fullPath);
-          const extension = path.extname(entry.name).toLowerCase();
+          try {
+            const stats = await fs.stat(fullPath);
+            
+            if (stats.size > 10 * 1024 * 1024) {
+              console.warn(`Skipping large file: ${relativePath} (${stats.size} bytes)`);
+              continue;
+            }
 
-          files.push({
-            file_name: entry.name,
-            file_path: relativePath.replace(/\\/g, '/'), // Normalize path separators
-            file_extension: extension || null,
-            file_size: stats.size
-          });
+            const extension = path.extname(entry.name).toLowerCase();
+
+            files.push({
+              file_name: entry.name,
+              file_path: relativePath.replace(/\\/g, '/'),
+              file_extension: extension || null,
+              file_size: stats.size
+            });
+          } catch (statError) {
+            console.warn(`Failed to stat file ${relativePath}:`, statError.message);
+          }
         }
       }
     } catch (error) {
-      console.error(`Error scanning directory ${dirPath}:`, error);
-      // Continue scanning other directories
+      if (error.code === 'EACCES' || error.code === 'EPERM') {
+        console.warn(`Permission denied: ${dirPath}`);
+      } else if (error.code === 'ENOENT') {
+        console.warn(`Directory not found: ${dirPath}`);
+      } else {
+        console.error(`Error scanning directory ${dirPath}:`, error.message);
+      }
     }
 
     return files;
@@ -95,16 +122,25 @@ class FileScanner {
    */
   async scanRepository(repositoryPath) {
     try {
-      // Verify directory exists
       await fs.access(repositoryPath);
-      
-      // Scan all files
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        throw new Error('Repository directory does not exist');
+      }
+      throw new Error('Cannot access repository directory');
+    }
+
+    try {
       const files = await this.scanDirectory(repositoryPath);
       
+      if (files.length === 0) {
+        console.warn('No files found in repository');
+      }
+
       return files;
     } catch (error) {
       console.error('Error scanning repository:', error);
-      throw new Error('Failed to scan repository files');
+      throw new Error(`Failed to scan repository: ${error.message}`);
     }
   }
 

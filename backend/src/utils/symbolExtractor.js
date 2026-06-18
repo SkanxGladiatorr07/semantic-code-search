@@ -11,67 +11,96 @@ class SymbolExtractor {
    */
   extractSymbols(parsedFiles) {
     const symbols = [];
+    const MAX_SYMBOLS = 100000;
+
+    if (!Array.isArray(parsedFiles)) {
+      console.error('extractSymbols: parsedFiles is not an array');
+      return symbols;
+    }
 
     parsedFiles.forEach(file => {
-      const parsed = file.parsed_content;
-      
-      if (!parsed) return;
-
-      const filePath = parsed.file_path;
-      const fileName = parsed.file_name;
-
-      // Extract functions
-      if (parsed.functions && Array.isArray(parsed.functions)) {
-        parsed.functions.forEach(funcName => {
-          symbols.push({
-            name: funcName,
-            type: 'function',
-            file_path: filePath,
-            file_name: fileName,
-            language: parsed.language
-          });
-        });
+      if (symbols.length >= MAX_SYMBOLS) {
+        return;
       }
 
-      // Extract methods (Java)
-      if (parsed.methods && Array.isArray(parsed.methods)) {
-        parsed.methods.forEach(methodName => {
-          symbols.push({
-            name: methodName,
-            type: 'function',
-            file_path: filePath,
-            file_name: fileName,
-            language: parsed.language
-          });
-        });
-      }
+      try {
+        if (!file || !file.parsed_content) {
+          return;
+        }
 
-      // Extract classes
-      if (parsed.classes && Array.isArray(parsed.classes)) {
-        parsed.classes.forEach(className => {
-          symbols.push({
-            name: className,
-            type: 'class',
-            file_path: filePath,
-            file_name: fileName,
-            language: parsed.language
-          });
-        });
-      }
+        const parsed = file.parsed_content;
+        
+        if (!parsed.file_path || !parsed.file_name) {
+          console.warn('Missing file path or name in parsed content');
+          return;
+        }
 
-      // Extract interfaces (Java)
-      if (parsed.interfaces && Array.isArray(parsed.interfaces)) {
-        parsed.interfaces.forEach(interfaceName => {
-          symbols.push({
-            name: interfaceName,
-            type: 'interface',
-            file_path: filePath,
-            file_name: fileName,
-            language: parsed.language
+        const filePath = parsed.file_path;
+        const fileName = parsed.file_name;
+
+        if (parsed.functions && Array.isArray(parsed.functions)) {
+          parsed.functions.forEach(funcName => {
+            if (funcName && typeof funcName === 'string' && symbols.length < MAX_SYMBOLS) {
+              symbols.push({
+                name: funcName,
+                type: 'function',
+                file_path: filePath,
+                file_name: fileName,
+                language: parsed.language || 'Unknown'
+              });
+            }
           });
-        });
+        }
+
+        if (parsed.methods && Array.isArray(parsed.methods)) {
+          parsed.methods.forEach(methodName => {
+            if (methodName && typeof methodName === 'string' && symbols.length < MAX_SYMBOLS) {
+              symbols.push({
+                name: methodName,
+                type: 'function',
+                file_path: filePath,
+                file_name: fileName,
+                language: parsed.language || 'Unknown'
+              });
+            }
+          });
+        }
+
+        if (parsed.classes && Array.isArray(parsed.classes)) {
+          parsed.classes.forEach(className => {
+            if (className && typeof className === 'string' && symbols.length < MAX_SYMBOLS) {
+              symbols.push({
+                name: className,
+                type: 'class',
+                file_path: filePath,
+                file_name: fileName,
+                language: parsed.language || 'Unknown'
+              });
+            }
+          });
+        }
+
+        if (parsed.interfaces && Array.isArray(parsed.interfaces)) {
+          parsed.interfaces.forEach(interfaceName => {
+            if (interfaceName && typeof interfaceName === 'string' && symbols.length < MAX_SYMBOLS) {
+              symbols.push({
+                name: interfaceName,
+                type: 'interface',
+                file_path: filePath,
+                file_name: fileName,
+                language: parsed.language || 'Unknown'
+              });
+            }
+          });
+        }
+      } catch (error) {
+        console.warn(`Error extracting symbols from file:`, error.message);
       }
     });
+
+    if (symbols.length >= MAX_SYMBOLS) {
+      console.warn(`Symbol limit reached: ${MAX_SYMBOLS}`);
+    }
 
     return symbols;
   }

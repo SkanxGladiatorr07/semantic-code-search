@@ -9,7 +9,6 @@
 export const validateCreateRepository = (req, res, next) => {
   const { repository_name, github_url } = req.body;
   
-  // Check required fields
   if (!repository_name || !github_url) {
     return res.status(400).json({
       success: false,
@@ -17,7 +16,6 @@ export const validateCreateRepository = (req, res, next) => {
     });
   }
 
-  // Validate repository name
   const trimmedName = repository_name.trim();
   if (trimmedName.length < 2) {
     return res.status(400).json({
@@ -26,28 +24,27 @@ export const validateCreateRepository = (req, res, next) => {
     });
   }
 
-  // Validate GitHub URL
+  if (trimmedName.length > 255) {
+    return res.status(400).json({
+      success: false,
+      message: 'Repository name too long (max 255 characters)'
+    });
+  }
+
   const trimmedUrl = github_url.trim();
-  if (!trimmedUrl.startsWith('https://github.com/')) {
+  
+  if (!trimmedUrl.match(/^https:\/\/github\.com\/[\w-]+\/[\w.-]+\/?$/i)) {
     return res.status(400).json({
       success: false,
-      message: 'Invalid GitHub URL format. Must start with https://github.com/'
+      message: 'Invalid GitHub URL format. Must be: https://github.com/owner/repo'
     });
   }
 
-  // Check URL format more specifically
-  const urlParts = trimmedUrl.split('/');
-  if (urlParts.length < 5) {
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid GitHub URL. Must be in format: https://github.com/owner/repo'
-    });
-  }
+  const cleanUrl = trimmedUrl.replace(/\.git$/, '').replace(/\/$/, '');
 
-  // Clean up the data for the next middleware/controller
   req.body.repository_name = trimmedName;
-  req.body.github_url = trimmedUrl;
-  req.body.description = req.body.description ? req.body.description.trim() : null;
+  req.body.github_url = cleanUrl;
+  req.body.description = req.body.description ? req.body.description.trim().substring(0, 500) : null;
 
   next();
 };
@@ -58,15 +55,13 @@ export const validateCreateRepository = (req, res, next) => {
 export const validateUpdateRepository = (req, res, next) => {
   const { repository_name, github_url } = req.body;
   
-  // Check if at least one field is provided
   if (!repository_name && !github_url && req.body.description === undefined) {
     return res.status(400).json({
       success: false,
-      message: 'At least one field (repository_name, github_url, or description) must be provided'
+      message: 'At least one field must be provided'
     });
   }
 
-  // Validate repository name if provided
   if (repository_name) {
     const trimmedName = repository_name.trim();
     if (trimmedName.length < 2) {
@@ -75,33 +70,31 @@ export const validateUpdateRepository = (req, res, next) => {
         message: 'Repository name must be at least 2 characters long'
       });
     }
+    if (trimmedName.length > 255) {
+      return res.status(400).json({
+        success: false,
+        message: 'Repository name too long (max 255 characters)'
+      });
+    }
     req.body.repository_name = trimmedName;
   }
 
-  // Validate GitHub URL if provided
   if (github_url) {
     const trimmedUrl = github_url.trim();
-    if (!trimmedUrl.startsWith('https://github.com/')) {
+    
+    if (!trimmedUrl.match(/^https:\/\/github\.com\/[\w-]+\/[\w.-]+\/?$/i)) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid GitHub URL format. Must start with https://github.com/'
+        message: 'Invalid GitHub URL format. Must be: https://github.com/owner/repo'
       });
     }
-
-    // Check URL format more specifically
-    const urlParts = trimmedUrl.split('/');
-    if (urlParts.length < 5) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid GitHub URL. Must be in format: https://github.com/owner/repo'
-      });
-    }
-    req.body.github_url = trimmedUrl;
+    
+    const cleanUrl = trimmedUrl.replace(/\.git$/, '').replace(/\/$/, '');
+    req.body.github_url = cleanUrl;
   }
 
-  // Clean up description if provided
   if (req.body.description !== undefined) {
-    req.body.description = req.body.description ? req.body.description.trim() : null;
+    req.body.description = req.body.description ? req.body.description.trim().substring(0, 500) : null;
   }
 
   next();
