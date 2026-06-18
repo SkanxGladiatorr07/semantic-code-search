@@ -33,6 +33,7 @@ const RepositorySymbols = () => {
       
       console.log('Symbols response:', symbolsResponse);
       console.log('Symbols data:', symbolsResponse.data);
+      console.log('Statistics:', symbolsResponse.data.statistics);
       console.log('First symbol:', symbolsResponse.data.symbols[0]);
       
       setData(symbolsResponse.data);
@@ -156,17 +157,17 @@ const RepositorySymbols = () => {
               <div className="symbols-stats">
                 <div className="stat-card">
                   <span className="stat-label">Total Symbols</span>
-                  <span className="stat-value">{data.statistics.total}</span>
+                  <span className="stat-value">{data.statistics?.total || data.symbols?.length || 0}</span>
                 </div>
                 <div className="stat-card">
                   <span className="stat-label">Functions</span>
-                  <span className="stat-value">{data.statistics.functions}</span>
+                  <span className="stat-value">{data.statistics?.functions || 0}</span>
                 </div>
                 <div className="stat-card">
                   <span className="stat-label">Classes</span>
-                  <span className="stat-value">{data.statistics.classes}</span>
+                  <span className="stat-value">{data.statistics?.classes || 0}</span>
                 </div>
-                {data.statistics.interfaces > 0 && (
+                {(data.statistics?.interfaces || 0) > 0 && (
                   <div className="stat-card">
                     <span className="stat-label">Interfaces</span>
                     <span className="stat-value">{data.statistics.interfaces}</span>
