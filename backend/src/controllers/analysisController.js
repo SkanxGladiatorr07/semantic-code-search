@@ -18,15 +18,14 @@ import contextService from '../services/contextService.js';
  * @access Public
  */
 export const analyzeRepository = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const repositoryId = parseInt(id);
+  const repositoryId = parseInt(req.params.id);
 
+  try {
     if (!repositoryId || isNaN(repositoryId)) {
       return res.status(400).json({
         success: false,
         message: 'Invalid repository ID',
-        userMessage: 'Please provide a valid repository ID'
+        userMessage: 'Invalid repository ID'
       });
     }
 
@@ -36,15 +35,15 @@ export const analyzeRepository = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Repository not found',
-        userMessage: 'The requested repository does not exist'
+        userMessage: 'Repository not found'
       });
     }
 
     if (repository.scan_status !== 'completed') {
       return res.status(400).json({
         success: false,
-        message: 'Repository must be scanned before analysis',
-        userMessage: 'Please scan the repository first before analyzing'
+        message: 'Repository must be scanned first',
+        userMessage: 'Please scan the repository before analyzing'
       });
     }
 
@@ -67,27 +66,59 @@ export const analyzeRepository = async (req, res) => {
     if (files.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'No files found in repository',
-        userMessage: 'No files found. Please scan the repository first'
+        message: 'No files to analyze',
+        userMessage: 'Repository is empty or not scanned'
       });
     }
 
     await SymbolModel.deleteByRepositoryId(repositoryId);
 
-    const repositoryPath = gitCloner.getRepositoryPath(repository.id);
+    const repositoryPath = gitCloner.getRepositoryPath(repositoryId);
     console.log('Repository path:', repositoryPath);
     console.log('Files to parse:', files.length);
     
-    const parsedFiles = await codeParser.parseFiles(files, repositoryPath);
-    console.log('Parsed files:', parsedFiles.length);
-    
-    const symbols = symbolExtractor.extractSymbols(parsedFiles);
-    console.log('Extracted symbols:', symbols.length);
+    let parsedFiles = [];
+    try {
+      parsedFiles = await codeParser.parseFiles(files, repositoryPath);
+      console.log('Parsed files:', parsedFiles.length);
+    } catch (parseError) {
+      console.error('Parse error:', parseError.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to parse code files',
+        userMessage: 'Error parsing repository code'
+      });
+    }
+
+    if (parsedFiles.length === 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'No parseable files found',
+        data: {
+          repository_id: repositoryId,
+          total_symbols: 0,
+          statistics: { total: 0, functions: 0, classes: 0, interfaces: 0 }
+        }
+      });
+    }
+
+    let symbols = [];
+    try {
+      symbols = symbolExtractor.extractSymbols(parsedFiles);
+      console.log('Extracted symbols:', symbols.length);
+    } catch (extractError) {
+      console.error('Symbol extraction error:', extractError.message);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to extract symbols',
+        userMessage: 'Error extracting code symbols'
+      });
+    }
 
     if (symbols.length === 0) {
       return res.status(200).json({
         success: true,
-        message: 'Repository analyzed - no symbols found',
+        message: 'No symbols found in code',
         data: {
           repository_id: repositoryId,
           total_symbols: 0,
@@ -98,22 +129,33 @@ export const analyzeRepository = async (req, res) => {
 
     const symbolsToSave = [];
     symbols.forEach(symbol => {
-      const file = files.find(f => f.file_path === symbol.file_path);
-      if (file) {
-        symbolsToSave.push({
-          file_id: file.id,
-          symbol_name: symbol.name,
-          symbol_type: symbol.type
-        });
+      try {
+        const file = files.find(f => f.file_path === symbol.file_path);
+        if (file && symbol.name && symbol.type) {
+          symbolsToSave.push({
+            file_id: file.id,
+            symbol_name: symbol.name,
+            symbol_type: symbol.type
+          });
+        }
+      } catch (matchError) {
+        console.warn('Error matching symbol to file:', matchError.message);
       }
     });
 
     if (symbolsToSave.length > 0) {
       console.log('Saving symbols to database:', symbolsToSave.length);
-      await SymbolModel.createBatch(repositoryId, symbolsToSave);
-      console.log('Symbols saved successfully');
-    } else {
-      console.log('No symbols to save after file matching');
+      try {
+        await SymbolModel.createBatch(repositoryId, symbolsToSave);
+        console.log('Symbols saved successfully');
+      } catch (dbError) {
+        console.error('Database error saving symbols:', dbError.message);
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to save symbols to database',
+          userMessage: 'Database error while saving analysis'
+        });
+      }
     }
 
     const statistics = await SymbolModel.getStatistics(repositoryId);
@@ -122,18 +164,18 @@ export const analyzeRepository = async (req, res) => {
       success: true,
       message: 'Repository analyzed successfully',
       data: {
-        repository_id: repository.id,
+        repository_id: repositoryId,
         total_symbols: statistics.total,
         statistics
       }
     });
 
   } catch (error) {
-    console.error('Error in analyzeRepository:', error);
+    console.error('Unexpected error in analyzeRepository:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to analyze repository',
-      userMessage: 'Unable to analyze repository. Please try again later',
+      message: 'Unexpected analysis error',
+      userMessage: 'An unexpected error occurred during analysis',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }

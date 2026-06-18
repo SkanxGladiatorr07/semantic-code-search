@@ -4,10 +4,11 @@
  */
 
 import Groq from 'groq-sdk';
+import env from '../config/env.js';
 
 class GroqService {
   constructor() {
-    this.apiKey = process.env.GROQ_API_KEY;
+    this.apiKey = env.groq.apiKey;
     this.client = null;
     this.initialized = false;
   }
@@ -57,10 +58,10 @@ class GroqService {
       this.ensureInitialized();
 
       const response = await this.client.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
+        model: env.groq.model,
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 8000
+        temperature: env.groq.temperature,
+        max_tokens: env.groq.maxTokens
       });
 
       return response.choices[0].message.content;
@@ -84,10 +85,10 @@ class GroqService {
       this.ensureInitialized();
 
       const stream = await this.client.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
+        model: env.groq.model,
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 8000,
+        temperature: env.groq.temperature,
+        max_tokens: env.groq.maxTokens,
         stream: true
       });
 

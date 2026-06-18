@@ -4,10 +4,11 @@
   left: 0;
   right: 0;
   height: 70px;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
   z-index: 1000;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-fast);
 }
 
 .navbar-container {
@@ -25,14 +26,14 @@
   align-items: center;
   gap: 12px;
   text-decoration: none;
-  color: #111827;
+  color: var(--text-primary);
   font-size: 1.25rem;
   font-weight: 700;
-  transition: color 0.2s;
+  transition: color var(--transition-fast);
 }
 
 .navbar-brand:hover {
-  color: #3b82f6;
+  color: var(--primary-color);
 }
 
 .brand-icon {
@@ -46,26 +47,27 @@
 .navbar-links {
   display: flex;
   gap: 8px;
+  align-items: center;
 }
 
 .nav-link {
   padding: 8px 20px;
   text-decoration: none;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-weight: 500;
-  border-radius: 8px;
-  transition: all 0.2s;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
   font-size: 1rem;
 }
 
 .nav-link:hover {
-  color: #3b82f6;
-  background: #eff6ff;
+  color: var(--primary-color);
+  background: rgba(59, 130, 246, 0.1);
 }
 
 .nav-link.active {
-  color: #3b82f6;
-  background: #dbeafe;
+  color: var(--primary-color);
+  background: rgba(59, 130, 246, 0.15);
   font-weight: 600;
 }
 

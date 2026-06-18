@@ -1,77 +1,101 @@
-/**
- * Symbol Extractor Utility
- * Extracts functions and classes from parsed code
- */
+import env from '../config/env.js';
 
 class SymbolExtractor {
-  /**
-   * Extract symbols from parsed files
-   * @param {Array} parsedFiles - Array of parsed file objects
-   * @returns {Array}
-   */
+  constructor() {
+    this.maxSymbols = env.limits.maxSymbols;
+  }
+
   extractSymbols(parsedFiles) {
     const symbols = [];
 
+    if (!Array.isArray(parsedFiles)) {
+      console.error('extractSymbols: parsedFiles is not an array');
+      return symbols;
+    }
+
     parsedFiles.forEach(file => {
-      const parsed = file.parsed_content;
-      
-      if (!parsed) return;
-
-      const filePath = parsed.file_path;
-      const fileName = parsed.file_name;
-
-      // Extract functions
-      if (parsed.functions && Array.isArray(parsed.functions)) {
-        parsed.functions.forEach(funcName => {
-          symbols.push({
-            name: funcName,
-            type: 'function',
-            file_path: filePath,
-            file_name: fileName,
-            language: parsed.language
-          });
-        });
+      if (symbols.length >= this.maxSymbols) {
+        return;
       }
 
-      // Extract methods (Java)
-      if (parsed.methods && Array.isArray(parsed.methods)) {
-        parsed.methods.forEach(methodName => {
-          symbols.push({
-            name: methodName,
-            type: 'function',
-            file_path: filePath,
-            file_name: fileName,
-            language: parsed.language
-          });
-        });
-      }
+      try {
+        if (!file || !file.parsed_content) {
+          return;
+        }
 
-      // Extract classes
-      if (parsed.classes && Array.isArray(parsed.classes)) {
-        parsed.classes.forEach(className => {
-          symbols.push({
-            name: className,
-            type: 'class',
-            file_path: filePath,
-            file_name: fileName,
-            language: parsed.language
-          });
-        });
-      }
+        const parsed = file.parsed_content;
+        
+        if (!parsed.file_path || !parsed.file_name) {
+          console.warn('Missing file path or name in parsed content');
+          return;
+        }
 
-      // Extract interfaces (Java)
-      if (parsed.interfaces && Array.isArray(parsed.interfaces)) {
-        parsed.interfaces.forEach(interfaceName => {
-          symbols.push({
-            name: interfaceName,
-            type: 'interface',
-            file_path: filePath,
-            file_name: fileName,
-            language: parsed.language
+        const filePath = parsed.file_path;
+        const fileName = parsed.file_name;
+
+        if (parsed.functions && Array.isArray(parsed.functions)) {
+          parsed.functions.forEach(funcName => {
+            if (funcName && typeof funcName === 'string' && symbols.length < this.maxSymbols) {
+              symbols.push({
+                name: funcName,
+                type: 'function',
+                file_path: filePath,
+                file_name: fileName,
+                language: parsed.language || 'Unknown'
+              });
+            }
           });
-        });
+        }
+
+        if (parsed.methods && Array.isArray(parsed.methods)) {
+          parsed.methods.forEach(methodName => {
+            if (methodName && typeof methodName === 'string' && symbols.length < this.maxSymbols) {
+              symbols.push({
+                name: methodName,
+                type: 'function',
+                file_path: filePath,
+                file_name: fileName,
+                language: parsed.language || 'Unknown'
+              });
+            }
+          });
+        }
+
+        if (parsed.classes && Array.isArray(parsed.classes)) {
+          parsed.classes.forEach(className => {
+            if (className && typeof className === 'string' && symbols.length < this.maxSymbols) {
+              symbols.push({
+                name: className,
+                type: 'class',
+                file_path: filePath,
+                file_name: fileName,
+                language: parsed.language || 'Unknown'
+              });
+            }
+          });
+        }
+
+        if (parsed.interfaces && Array.isArray(parsed.interfaces)) {
+          parsed.interfaces.forEach(interfaceName => {
+            if (interfaceName && typeof interfaceName === 'string' && symbols.length < this.maxSymbols) {
+              symbols.push({
+                name: interfaceName,
+                type: 'interface',
+                file_path: filePath,
+                file_name: fileName,
+                language: parsed.language || 'Unknown'
+              });
+            }
+          });
+        }
+      } catch (error) {
+        console.warn(`Error extracting symbols from file:`, error.message);
       }
     });
+
+    if (symbols.length >= this.maxSymbols) {
+      console.warn(`Symbol limit reached: ${this.maxSymbols}`);
+    }
 
     return symbols;
   }

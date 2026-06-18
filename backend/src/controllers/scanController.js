@@ -14,10 +14,10 @@ import fileScanner from '../utils/fileScanner.js';
  * @access Public
  */
 export const scanRepository = async (req, res) => {
+  const repositoryId = parseInt(req.params.id);
+  
   try {
-    const { id } = req.params;
-
-    const repository = await RepositoryModel.findById(parseInt(id));
+    const repository = await RepositoryModel.findById(repositoryId);
     
     if (!repository) {
       return res.status(404).json({
@@ -38,7 +38,7 @@ export const scanRepository = async (req, res) => {
     if (repository.scan_status === 'completed' && repository.total_files > 0) {
       return res.status(409).json({
         success: false,
-        message: 'Repository already scanned. Delete existing scan data to rescan.',
+        message: 'Repository already scanned',
         userMessage: 'Repository already scanned',
         data: {
           repository_id: repository.id,
@@ -47,65 +47,91 @@ export const scanRepository = async (req, res) => {
       });
     }
 
-    await RepositoryModel.updateScanStatus(repository.id, 'scanning', 0);
+    await RepositoryModel.updateScanStatus(repositoryId, 'scanning', 0);
 
     let localPath;
     try {
-      localPath = await gitCloner.cloneRepository(repository.github_url, repository.id);
-    } catch (error) {
-      await RepositoryModel.updateScanStatus(repository.id, 'failed', 0);
-      return res.status(500).json({
+      localPath = await gitCloner.cloneRepository(repository.github_url, repositoryId);
+    } catch (cloneError) {
+      console.error('Clone error:', cloneError.message);
+      await RepositoryModel.updateScanStatus(repositoryId, 'failed', 0);
+      
+      return res.status(400).json({
         success: false,
-        message: 'Failed to clone repository',
-        userMessage: 'Failed to clone repository',
-        error: error.message
+        message: cloneError.message,
+        userMessage: cloneError.message,
+        error_type: 'clone_failed'
       });
     }
 
-    let files;
+    let files = [];
     try {
       files = await fileScanner.scanRepository(localPath);
-    } catch (error) {
-      await RepositoryModel.updateScanStatus(repository.id, 'failed', 0);
+    } catch (scanError) {
+      console.error('Scan error:', scanError.message);
+      await RepositoryModel.updateScanStatus(repositoryId, 'failed', 0);
+      
+      try {
+        await gitCloner.deleteRepository(repositoryId);
+      } catch (deleteError) {
+        console.warn('Failed to cleanup after scan error:', deleteError.message);
+      }
+      
       return res.status(500).json({
         success: false,
-        message: 'Failed to scan repository files',
+        message: scanError.message,
         userMessage: 'Failed to scan repository files',
-        error: error.message
+        error_type: 'scan_failed'
       });
     }
 
-    await RepositoryFileModel.deleteByRepositoryId(repository.id);
+    try {
+      await RepositoryFileModel.deleteByRepositoryId(repositoryId);
 
-    if (files.length > 0) {
-      await RepositoryFileModel.createBatch(repository.id, files);
+      if (files.length > 0) {
+        await RepositoryFileModel.createBatch(repositoryId, files);
+      }
+
+      await RepositoryModel.updateScanStatus(repositoryId, 'completed', files.length);
+    } catch (dbError) {
+      console.error('Database error:', dbError.message);
+      await RepositoryModel.updateScanStatus(repositoryId, 'failed', 0);
+      
+      return res.status(500).json({
+        success: false,
+        message: 'Database error while saving files',
+        userMessage: 'Failed to save scan results',
+        error_type: 'database_error'
+      });
     }
-
-    await RepositoryModel.updateScanStatus(repository.id, 'completed', files.length);
 
     const statistics = fileScanner.getStatistics(files);
 
     res.status(200).json({
       success: true,
-      message: 'Repository scanned successfully',
+      message: files.length === 0 ? 'Repository is empty' : 'Repository scanned successfully',
       data: {
-        repository_id: repository.id,
+        repository_id: repositoryId,
         total_files: files.length,
-        statistics
+        statistics,
+        is_empty: files.length === 0
       }
     });
 
   } catch (error) {
-    console.error('Error in scanRepository:', error);
+    console.error('Unexpected error in scanRepository:', error);
     
-    if (req.params.id) {
-      await RepositoryModel.updateScanStatus(parseInt(req.params.id), 'failed', 0).catch(() => {});
+    try {
+      await RepositoryModel.updateScanStatus(repositoryId, 'failed', 0);
+    } catch (statusError) {
+      console.error('Failed to update status after error:', statusError.message);
     }
     
     res.status(500).json({
       success: false,
-      message: 'Failed to scan repository',
-      userMessage: 'An error occurred during scanning',
+      message: 'Unexpected error during scan',
+      userMessage: 'An unexpected error occurred',
+      error_type: 'unexpected_error',
       error: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }

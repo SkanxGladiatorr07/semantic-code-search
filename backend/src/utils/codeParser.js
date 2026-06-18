@@ -5,6 +5,7 @@
 
 import fs from 'fs/promises';
 import path from 'path';
+import env from '../config/env.js';
 
 class CodeParser {
   constructor() {
@@ -16,6 +17,9 @@ class CodeParser {
       '.java',
       '.py'
     ]);
+    
+    this.maxFileSize = 5 * 1024 * 1024;
+    this.maxFilesToParse = env.limits.maxFilesToParse;
   }
 
   /**
@@ -40,7 +44,35 @@ class CodeParser {
 
     try {
       const stats = await fs.stat(filePath);
-      const content = await fs.readFile(filePath, 'utf-8');
+      
+      if (stats.size === 0) {
+        console.warn(`Skipping empty file: ${filePath}`);
+        return null;
+      }
+
+      if (stats.size > this.maxFileSize) {
+        console.warn(`Skipping large file: ${filePath} (${stats.size} bytes)`);
+        return null;
+      }
+
+      let content;
+      try {
+        content = await fs.readFile(filePath, 'utf-8');
+      } catch (readError) {
+        if (readError.code === 'ENOENT') {
+          console.warn(`File not found: ${filePath}`);
+        } else if (readError.message.includes('invalid') || readError.message.includes('decode')) {
+          console.warn(`Binary or invalid encoding: ${filePath}`);
+        } else {
+          console.warn(`Cannot read file: ${filePath} - ${readError.message}`);
+        }
+        return null;
+      }
+
+      if (!content || content.trim().length === 0) {
+        return null;
+      }
+
       const ext = path.extname(filePath).toLowerCase();
 
       const metadata = {
@@ -55,22 +87,26 @@ class CodeParser {
         parsed_at: new Date().toISOString()
       };
 
-      // Extract language-specific metadata
-      switch (ext) {
-        case '.js':
-        case '.jsx':
-        case '.ts':
-        case '.tsx':
-          return this.parseJavaScript(metadata);
-        case '.java':
-          return this.parseJava(metadata);
-        case '.py':
-          return this.parsePython(metadata);
-        default:
-          return metadata;
+      try {
+        switch (ext) {
+          case '.js':
+          case '.jsx':
+          case '.ts':
+          case '.tsx':
+            return this.parseJavaScript(metadata);
+          case '.java':
+            return this.parseJava(metadata);
+          case '.py':
+            return this.parsePython(metadata);
+          default:
+            return metadata;
+        }
+      } catch (parseError) {
+        console.warn(`Parse error in ${filePath}:`, parseError.message);
+        return metadata;
       }
     } catch (error) {
-      console.error(`Error parsing file ${filePath}:`, error);
+      console.error(`Error parsing file ${filePath}:`, error.message);
       return null;
     }
   }
@@ -257,15 +293,30 @@ class CodeParser {
   async parseFiles(files, basePath) {
     const results = [];
 
-    for (const file of files) {
-      const fullPath = path.join(basePath, file.file_path);
-      const parsed = await this.parseFile(fullPath);
-      
-      if (parsed) {
-        results.push({
-          ...file,
-          parsed_content: parsed
-        });
+    const filesToParse = files.slice(0, this.maxFilesToParse);
+    
+    if (files.length > this.maxFilesToParse) {
+      console.warn(`Limiting parse to ${this.maxFilesToParse} files (total: ${files.length})`);
+    }
+
+    for (const file of filesToParse) {
+      try {
+        if (!file || !file.file_path) {
+          console.warn('Invalid file object:', file);
+          continue;
+        }
+
+        const fullPath = path.join(basePath, file.file_path);
+        const parsed = await this.parseFile(fullPath);
+        
+        if (parsed) {
+          results.push({
+            ...file,
+            parsed_content: parsed
+          });
+        }
+      } catch (error) {
+        console.warn(`Failed to parse ${file.file_path}:`, error.message);
       }
     }
 

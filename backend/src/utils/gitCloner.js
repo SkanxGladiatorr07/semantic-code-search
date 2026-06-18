@@ -7,12 +7,13 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs/promises';
+import env from '../config/env.js';
 
 const execPromise = promisify(exec);
 
 class GitCloner {
   constructor() {
-    this.cloneDir = path.join(process.cwd(), 'cloned_repos');
+    this.cloneDir = path.join(process.cwd(), env.clone.directory);
   }
 
   /**
@@ -47,27 +48,55 @@ class GitCloner {
     
     const localPath = this.getRepositoryPath(repositoryId);
 
-    // Delete existing directory if it exists
     try {
       await fs.rm(localPath, { recursive: true, force: true });
     } catch (error) {
-      // Ignore if directory doesn't exist
+      // Ignore
     }
 
     try {
-      // Clone with depth 1 for faster cloning
       const { stdout, stderr } = await execPromise(
-        `git clone --depth 1 "${githubUrl}" "${localPath}"`,
-        { maxBuffer: 1024 * 1024 * 10 } // 10MB buffer
+        `git clone --depth 1 --single-branch "${githubUrl}" "${localPath}"`,
+        { 
+          maxBuffer: 1024 * 1024 * 50,
+          timeout: env.clone.timeout
+        }
       );
 
       if (stderr && !stderr.includes('Cloning into')) {
-        console.error('Git clone stderr:', stderr);
+        console.warn('Git clone warning:', stderr);
+      }
+
+      const exists = await this.isRepositoryCloned(repositoryId);
+      if (!exists) {
+        throw new Error('Repository directory not created after clone');
       }
 
       return localPath;
     } catch (error) {
       console.error('Error cloning repository:', error);
+      
+      try {
+        await fs.rm(localPath, { recursive: true, force: true });
+      } catch (cleanupError) {
+        // Ignore cleanup errors
+      }
+
+      if (error.killed || error.signal === 'SIGTERM') {
+        throw new Error('Clone operation timed out - repository too large');
+      }
+
+      const message = error.message.toLowerCase();
+      if (message.includes('not found') || message.includes('404')) {
+        throw new Error('Repository not found or is private');
+      }
+      if (message.includes('authentication') || message.includes('permission')) {
+        throw new Error('Authentication required - repository may be private');
+      }
+      if (message.includes('could not resolve host')) {
+        throw new Error('Network error - unable to reach GitHub');
+      }
+
       throw new Error(`Failed to clone repository: ${error.message}`);
     }
   }
