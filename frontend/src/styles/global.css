@@ -130,19 +130,16 @@ body {
 
 .btn-outline,
 .btn-outline-primary {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(10px);
-  border: 2px solid rgba(255, 255, 255, 0.9);
-  color: white;
+  background: transparent;
+  border: 2px solid var(--primary-color);
+  color: var(--primary-color);
 }
 
 .btn-outline:hover:not(:disabled),
 .btn-outline-primary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.3);
-  border-color: white;
+  background: var(--primary-color);
   color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
 }
 
 .btn-outline-secondary {
