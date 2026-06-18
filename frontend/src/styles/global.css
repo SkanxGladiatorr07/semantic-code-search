@@ -48,26 +48,6 @@
   --transition-slow: 0.5s ease;
 }
 
-[data-theme="dark"] {
-  /* Text Colors */
-  --text-primary: #f9fafb;
-  --text-secondary: #9ca3af;
-  --text-light: #6b7280;
-  
-  /* Background Colors */
-  --bg-primary: #1f2937;
-  --bg-secondary: #111827;
-  --bg-tertiary: #374151;
-  
-  /* Border */
-  --border-color: #374151;
-  
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
-}
-
 * {
   margin: 0;
   padding: 0;
