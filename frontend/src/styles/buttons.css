@@ -7,6 +7,8 @@
 }
 
 .btn {
+  background: #3b82f6;
+  color: white;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -115,6 +117,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  
 }
 
 .btn-icon {

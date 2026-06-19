@@ -18,7 +18,7 @@
 
 .main-content {
   flex: 1;
-  padding-top: 70px;
+  padding-top: 120px;
 }
 
 .page-container {
@@ -109,7 +109,7 @@
   }
   
   .main-content {
-    padding-top: 60px;
+    padding-top: 110px;
   }
   
   .page-title {
@@ -129,7 +129,7 @@
 
 @media (max-width: 480px) {
   .main-content {
-    padding-top: 60px;
+    padding-top: 100px;
   }
   
   .page-title {

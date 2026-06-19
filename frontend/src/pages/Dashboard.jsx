@@ -32,6 +32,7 @@ const Dashboard = () => {
     <div className="dashboard-page">
       <div className="dashboard-container">
         <div className="page-header">
+          
           <h1 className="page-title">Dashboard</h1>
           <p className="page-subtitle">
             Manage your repositories and perform code searches
