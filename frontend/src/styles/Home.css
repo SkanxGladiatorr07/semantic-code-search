@@ -1,9 +1,11 @@
 .home-page {
   min-height: calc(100vh - var(--navbar-height));
+  padding-top: 40px;
 }
 
 /* Hero Section */
 .hero-section {
+  margin-top: 30px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   padding: var(--spacing-2xl) 0;
@@ -24,6 +26,7 @@
 }
 
 .hero-container {
+  margin-top: 30px;
   max-width: var(--max-width);
   margin: 0 auto;
   padding: 0 var(--spacing-lg);

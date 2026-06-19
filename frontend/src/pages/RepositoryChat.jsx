@@ -158,7 +158,7 @@ const RepositoryChat = () => {
             className="btn btn-secondary btn-sm"
             disabled={loading || messages.length <= 1}
           >
-            🗑️ Clear Chat
+            Clear Chat
           </button>
         </div>
       </div>
@@ -229,21 +229,21 @@ const RepositoryChat = () => {
               onClick={() => setInputValue('What does this repository do?')}
               disabled={loading}
             >
-              What does this repository do?
+              What does the project contained in the repository do?
             </button>
             <button
               className="suggestion-chip"
               onClick={() => setInputValue('What are the main functions?')}
               disabled={loading}
             >
-              What are the main functions?
+              What are the main functions of the project?
             </button>
             <button
               className="suggestion-chip"
               onClick={() => setInputValue('Explain the project structure')}
               disabled={loading}
             >
-              Explain the project structure
+              Explain the project structure.
             </button>
           </div>
         </div>
