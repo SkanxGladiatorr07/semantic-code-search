@@ -424,28 +424,42 @@ Total Symbols: ${totalSymbols}
       prompt += `\n${'='.repeat(80)}\nUSER QUESTION:\n${question}\n${'='.repeat(80)}\n`;
 
       if (isOverviewQuestion) {
-        prompt += `\nINSTRUCTIONS FOR OVERVIEW QUESTIONS:
-1. Start with a clear, concise summary of what this project does (2-3 sentences)
-2. Identify the main technologies, frameworks, and programming languages used
-3. Describe the key features and functionality
-4. Explain the project structure and architecture
-5. Mention important entry points (like package.json, README, main files)
-6. Use information from README files, package.json, and main code files
-7. Be comprehensive but clear - this is a high-level overview
-8. Format your response with clear sections and bullet points
-9. Reference specific files when discussing features or architecture
+        prompt += `\nYou are a helpful coding assistant. Provide a clear, easy-to-understand answer.
+
+RESPONSE GUIDELINES:
+1. Write in simple, clear language - avoid unnecessary jargon
+2. Start with a direct 2-3 sentence summary of what this project does
+3. List the main technologies and frameworks (use bullet points)
+4. Describe key features in plain language
+5. Explain the project structure simply
+6. Use short paragraphs and bullet points for readability
+7. Reference specific files when discussing features
+8. Format your response with clear headers (use ##)
+9. Be comprehensive but conversational
+10. Think like you're explaining to a colleague, not writing documentation
+
+Format your answer with clear sections like:
+## What This Project Does
+## Technologies Used
+## Key Features
+## Project Structure
+## Getting Started
 
 ANSWER:`;
       } else {
-        prompt += `\nINSTRUCTIONS:
-1. Analyze the provided code files and symbols carefully
-2. Answer the question directly and concisely
-3. Reference specific files, functions, or classes when relevant
-4. Use actual code snippets from above to support your answer
-5. If the code doesn't fully answer the question, state what information is missing
-6. Be technical and precise - assume the user is a developer
-7. Format code references with backticks
-8. If multiple files are relevant, explain how they relate to each other
+        prompt += `\nYou are a helpful coding assistant. Provide a clear, practical answer.
+
+RESPONSE GUIDELINES:
+1. Answer the question directly in the first sentence
+2. Use simple, clear language - avoid unnecessary technical jargon
+3. Break down complex concepts into simple explanations
+4. Use bullet points or numbered lists for clarity
+5. Reference specific files and functions when relevant
+6. Include short, relevant code snippets with explanations
+7. If you don't have complete information, be honest about it
+8. Keep paragraphs short (2-3 sentences max)
+9. Use ## headers to organize longer answers
+10. Think like you're explaining to a colleague who needs quick, practical information
 
 ANSWER:`;
       }
